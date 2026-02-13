@@ -5,6 +5,7 @@
 
 # Maven
 backend/target
+webapp/target
 
 # Gradle
 frontend/.gradle
@@ -33,9 +34,6 @@ Thumbs.db
 *.bak
 *.swp
 *~
-
-# Frontend (not needed for backend container)
-frontend
 
 # H2 Database files
 *.db

@@ -8,7 +8,8 @@ Accord is a Discord-like self-hosted chat application designed for simplicity an
 
 **Technology Stack:**
 - **Backend**: Spring Boot 3.x, WebSocket (STOMP), H2 Database, Spring Data JPA
-- **Frontend**: LibGDX, Java WebSocket client, Scene2D UI
+- **Web Frontend**: Spring Boot, Thymeleaf, SockJS, STOMP.js (browser-based)
+- **Desktop Frontend**: LibGDX, Java WebSocket client, Scene2D UI
 
 ## Features
 
@@ -19,48 +20,79 @@ Accord is a Discord-like self-hosted chat application designed for simplicity an
 - ✅ Message history on login
 - ✅ Timestamp for each message
 - ✅ User join/leave notifications
+- ✅ **Browser-based web interface** (accessible from any device)
 - ✅ Cross-platform desktop support (LibGDX)
+- ✅ Docker containerization for easy deployment
 
 ## Quick Start
 
 ### Prerequisites
 
 - Java 17 or higher
-- Maven 3.6+ (for backend)
-- Gradle 7+ (included via wrapper for frontend)
+- Maven 3.6+ (for backend and webapp)
+- Gradle 7+ (included via wrapper for LibGDX desktop frontend)
+- Docker & Docker Compose (for containerized deployment)
 
 ### Running the Application
 
-**Option 1: Run both services manually**
+**Option 1: Using Docker Compose (Recommended)**
+
+```bash
+# Start all services (backend + web app)
+docker compose up -d
+
+# Access the web application
+open http://localhost:3000
+```
+
+**Option 2: Run services manually**
 
 ```bash
 # Terminal 1 - Start backend
 cd backend
 mvn spring-boot:run
 
-# Terminal 2 - Start frontend (in a new terminal)
+# Terminal 2 - Start web application
+cd webapp
+mvn spring-boot:run
+
+# Access at http://localhost:3000
+
+# Optional: Terminal 3 - Start LibGDX desktop client
 cd frontend
 ./gradlew desktop:run
 ```
 
-**Option 2: Run backend first, then multiple frontend clients**
+**Option 3: Run backend + multiple LibGDX clients**
 
 ```bash
 # Terminal 1 - Start backend
 cd backend && mvn spring-boot:run
 
-# Terminal 2+ - Start as many frontend clients as you want
+# Terminal 2+ - Start as many LibGDX clients as you want
 cd frontend && ./gradlew desktop:run
 ```
 
 ### Using the Chat Application
 
-1. **Backend will start on** `http://localhost:8080`
-2. **Frontend window will open** (800x600)
-3. **Enter your username** (minimum 3 characters)
-4. **Click "Login"** to enter the chat room
-5. **Type your message** and click "Send" or press Enter
-6. **Open multiple clients** to test real-time messaging
+**Web Application (Browser):**
+1. Navigate to `http://localhost:3000`
+2. Enter your username (minimum 3 characters, alphanumeric + underscore)
+3. Click "Join Chat"
+4. Type your message and click "Send" or press Enter
+5. Open in multiple browser tabs to test real-time messaging
+
+**LibGDX Desktop Client:**
+1. **Frontend window will open** (800x600)
+2. **Enter your username** (minimum 3 characters)
+3. **Click "Login"** to enter the chat room
+4. **Type your message** and click "Send" or press Enter
+5. **Open multiple clients** to test real-time messaging
+
+**Backend API:**
+- Backend runs on `http://localhost:8080`
+- WebSocket endpoint: `ws://localhost:8080/ws`
+- REST API: `http://localhost:8080/api/users/login`, `http://localhost:8080/api/messages`
 
 ## Docker Deployment
 
@@ -84,25 +116,48 @@ docker compose logs -f backend
 docker compose down
 ```
 
-The backend will be available at `http://localhost:8080`.
+The services will be available at:
+- **Web Application**: `http://localhost:3000` (browser-based UI)
+- **Backend API**: `http://localhost:8080` (REST & WebSocket)
 
-### Building Docker Image Manually
+### Building Docker Images Manually
 
+**Backend:**
 ```bash
-# Build the image
-docker build -t accord-backend:latest .
+# Build the backend image
+docker build -t accord-backend:latest -f Dockerfile .
 
 # Run the container
 docker run -d \
   -p 8080:8080 \
   --name accord-backend \
   accord-backend:latest
+```
 
-# View logs
+**Web Application:**
+```bash
+# Build the webapp image
+docker build -t accord-webapp:latest -f Dockerfile.webapp .
+
+# Run the container (requires backend to be running)
+docker run -d \
+  -p 3000:3000 \
+  -e ACCORD_BACKEND_URL=http://backend:8080 \
+  -e ACCORD_BACKEND_WS_URL=ws://backend:8080/ws \
+  --link accord-backend:backend \
+  --name accord-webapp \
+  accord-webapp:latest
+```
+
+**View logs:**
+```bash
 docker logs -f accord-backend
+docker logs -f accord-webapp
+```
 
-# Stop and remove
-docker stop accord-backend
+**Stop and remove:**
+```bash
+docker stop accord-backend accord-webapp
 docker rm accord-backend
 ```
 
@@ -137,6 +192,7 @@ accord-prototype/
 ├── MVP.md                          # Detailed MVP documentation
 ├── README.md                       # This file
 ├── Dockerfile                      # Docker image for backend
+├── Dockerfile.webapp               # Docker image for web application
 ├── compose.yml                     # Docker Compose configuration
 ├── .dockerignore                   # Docker build exclusions
 ├── backend/                        # Spring Boot backend
@@ -147,12 +203,25 @@ accord-prototype/
 │       ├── controller/            # REST and WebSocket controllers
 │       ├── model/                 # JPA entities
 │       ├── repository/            # Data repositories
-│       └── service/               # Business logic
-└── frontend/                       # LibGDX frontend
+│       ├── service/               # Business logic
+│       └── util/                  # Validation utilities
+├── webapp/                         # Spring Boot web application
+│   ├── pom.xml                    # Maven configuration
+│   └── src/main/
+│       ├── java/com/accord/webapp/
+│       │   ├── AccordWebApplication.java
+│       │   └── controller/        # Web controllers
+│       └── resources/
+│           ├── templates/         # Thymeleaf HTML templates
+│           │   ├── index.html    # Login page
+│           │   └── chat.html     # Chat interface
+│           └── application.properties
+└── frontend/                       # LibGDX frontend (desktop)
     ├── build.gradle               # Root Gradle config
     ├── core/                      # Shared code
     │   └── src/com/accord/
     │       ├── AccordGame.java
+    │       ├── config/            # Configuration
     │       ├── screen/            # Login & Chat screens
     │       └── websocket/         # WebSocket client
     └── desktop/                   # Desktop launcher

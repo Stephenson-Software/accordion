@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accord Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header h1 {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #e74c3c;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            border-left: 3px solid #667eea;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.system {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            font-style: italic;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .message-username {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .message-time {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .message-content {
+            color: #333;
+            word-wrap: break-word;
+        }
+
+        .input-container {
+            background: white;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-form {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-form input {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .input-form input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-form button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .input-form button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-form button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div>
+                <h1>Accord Chat</h1>
+                <div style="font-size: 0.9em; margin-top: 4px;">
+                    Logged in as: <strong id="currentUsername"></strong>
+                </div>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div class="status">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messages"></div>
+
+        <div class="input-container">
+            <form class="input-form" id="messageForm">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type your message..." 
+                    maxlength="1000"
+                    autocomplete="off"
+                    disabled>
+                <button type="submit" id="sendButton" disabled>Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const backendWsUrl = /*[[${backendWsUrl}]]*/ 'ws://localhost:8080/ws';
+        const backendUrl = /*[[${backendUrl}]]*/ 'http://localhost:8080';
+        
+        // Check if user is logged in
+        const username = sessionStorage.getItem('username');
+        if (!username) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('currentUsername').textContent = username;
+
+        let stompClient = null;
+        let connected = false;
+
+        function connect() {
+            const socket = new SockJS(backendWsUrl);
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, onConnected, onError);
+        }
+
+        function onConnected() {
+            connected = true;
+            updateStatus(true);
+            
+            // Subscribe to the public topic
+            stompClient.subscribe('/topic/messages', onMessageReceived);
+            
+            // Send join notification
+            stompClient.send("/app/chat.join", {}, JSON.stringify({
+                username: username
+            }));
+            
+            // Load recent messages
+            loadRecentMessages();
+            
+            // Enable input
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+        }
+
+        function onError(error) {
+            connected = false;
+            updateStatus(false);
+            console.error('WebSocket error:', error);
+            
+            // Try to reconnect after 3 seconds
+            setTimeout(connect, 3000);
+        }
+
+        function onMessageReceived(payload) {
+            const message = JSON.parse(payload.body);
+            displayMessage(message);
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (content && stompClient && connected) {
+                const chatMessage = {
+                    username: username,
+                    content: content
+                };
+                
+                stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+                messageInput.value = '';
+            }
+        }
+
+        function displayMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            if (message.username === 'System') {
+                messageDiv.classList.add('system');
+            }
+            
+            const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-username">${escapeHtml(message.username)}</span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-content">${escapeHtml(message.content)}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function loadRecentMessages() {
+            try {
+                const response = await fetch(`${backendUrl}/api/messages?limit=50`);
+                if (response.ok) {
+                    const messages = await response.json();
+                    messages.forEach(message => displayMessage(message));
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function updateStatus(isConnected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('statusText');
+            
+            if (isConnected) {
+                indicator.classList.remove('disconnected');
+                text.textContent = 'Connected';
+            } else {
+                indicator.classList.add('disconnected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function logout() {
+            if (stompClient) {
+                stompClient.disconnect();
+            }
+            sessionStorage.removeItem('username');
+            window.location.href = '/';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('messageForm').addEventListener('submit', sendMessage);
+
+        // Connect on page load
+        connect();
+        /*]]>*/
+    </script>
+</body>
+</html>

@@ -50,6 +50,40 @@ services:
     
     restart: unless-stopped
 
+  # Web Application service
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    container_name: accord-webapp
+    ports:
+      - "3000:3000"
+    environment:
+      # Application configuration
+      - SPRING_APPLICATION_NAME=accord-webapp
+      - SERVER_PORT=3000
+      
+      # Backend configuration
+      # Use service name for internal communication
+      - ACCORD_BACKEND_URL=http://backend:8080
+      - ACCORD_BACKEND_WS_URL=ws://backend:8080/ws
+    
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - accord-network
+    
+    restart: unless-stopped
+
 networks:
   accord-network:
     driver: bridge
