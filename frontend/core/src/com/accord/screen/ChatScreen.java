@@ -137,7 +137,13 @@ public class ChatScreen implements Screen {
             LocalDateTime dt = LocalDateTime.parse(timestamp);
             timeStr = dt.format(TIME_FORMATTER);
         } catch (Exception e) {
-            timeStr = timestamp;
+            // If timestamp parsing fails, use the raw timestamp or current time
+            System.err.println("Failed to parse timestamp: " + timestamp + ", error: " + e.getMessage());
+            try {
+                timeStr = LocalDateTime.now().format(TIME_FORMATTER);
+            } catch (Exception ex) {
+                timeStr = "??:??:??";
+            }
         }
 
         String formattedMessage = String.format("[%s] %s: %s", timeStr, msgUsername, content);

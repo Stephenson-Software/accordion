@@ -34,7 +34,6 @@ public class ChatController {
     @SendTo("/topic/messages")
     public ChatMessage userJoin(Map<String, String> payload) {
         String username = payload.get("username");
-        ChatMessage joinMessage = new ChatMessage("System", username + " has joined the chat");
         return chatService.saveMessage("System", username + " has joined the chat");
     }
 }
