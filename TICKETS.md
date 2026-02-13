@@ -4,19 +4,19 @@ This document breaks down the development roadmap from [MVP.md](MVP.md) into act
 
 ## Ticket Status Legend
 
-- ✅ **Completed** - Feature is implemented and tested
-- 🚧 **In Progress** - Currently being worked on
-- 📋 **Planned** - Ready to be picked up
-- 🔮 **Future** - Planned for later phases
+- [COMPLETED] **Completed** - Feature is implemented and tested
+- [IN_PROGRESS] **In Progress** - Currently being worked on
+- [PLANNED] **Planned** - Ready to be picked up
+- [FUTURE] **Future** - Planned for later phases
 
 ---
 
-## Phase 1: MVP (Current) - ✅ COMPLETED
+## Phase 1: MVP (Current) - [COMPLETED] COMPLETED
 
 All Phase 1 tickets have been completed. See [MVP.md](MVP.md) for current functionality.
 
-### ✅ TICKET-001: Project Structure Setup
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-001: Project Structure Setup
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Infrastructure
 
@@ -30,8 +30,8 @@ Set up the basic project structure with backend and frontend directories, build 
 - [x] Initialize git repository
 - [x] Add .gitignore for Java/Maven/Gradle
 
-### ✅ TICKET-002: Spring Boot WebSocket Backend
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-002: Spring Boot WebSocket Backend
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend
 
@@ -45,8 +45,8 @@ Implement Spring Boot backend with WebSocket support for real-time communication
 - [x] Configure message broker and endpoints
 - [x] Test WebSocket connection manually
 
-### ✅ TICKET-003: H2 Database Integration
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-003: H2 Database Integration
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, Database
 
@@ -59,8 +59,8 @@ Integrate H2 in-memory database with Spring Data JPA for data persistence.
 - [x] Enable H2 console for debugging
 - [x] Test database connection and console access
 
-### ✅ TICKET-004: User Domain Model and Repository
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-004: User Domain Model and Repository
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, Data Model
 
@@ -74,8 +74,8 @@ Create User entity with JPA annotations and repository for user management.
 - [x] Add unique constraint on username
 - [x] Test basic CRUD operations
 
-### ✅ TICKET-005: ChatMessage Domain Model and Repository
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-005: ChatMessage Domain Model and Repository
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, Data Model
 
@@ -89,8 +89,8 @@ Create ChatMessage entity with JPA annotations and repository for message persis
 - [x] Add method to retrieve recent messages
 - [x] Test message persistence and retrieval
 
-### ✅ TICKET-006: User Service and REST API
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-006: User Service and REST API
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, API
 
@@ -105,8 +105,8 @@ Implement user service layer and REST endpoints for user login/registration.
 - [x] Add error handling for invalid usernames
 - [x] Test API with curl or Postman
 
-### ✅ TICKET-007: Chat Service and WebSocket Controller
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-007: Chat Service and WebSocket Controller
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, WebSocket
 
@@ -122,8 +122,8 @@ Implement chat service and WebSocket controller for message handling and broadca
 - [x] Persist messages to database
 - [x] Test WebSocket message flow
 
-### ✅ TICKET-008: Message History API
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-008: Message History API
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, API
 
@@ -137,8 +137,8 @@ Create REST endpoint to retrieve message history for new users joining the chat.
 - [x] Include username, content, and timestamp
 - [x] Test with various limit values
 
-### ✅ TICKET-009: LibGDX Project Setup
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-009: LibGDX Project Setup
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Frontend
 
@@ -152,8 +152,8 @@ Set up LibGDX project with desktop launcher and core module structure.
 - [x] Add Scene2D dependency for UI
 - [x] Test basic window rendering
 
-### ✅ TICKET-010: WebSocket Client Implementation
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-010: WebSocket Client Implementation
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Frontend, WebSocket
 
@@ -169,8 +169,8 @@ Implement Java WebSocket client for connecting to Spring Boot backend.
 - [x] Handle connection errors and reconnection
 - [x] Test connection and message exchange
 
-### ✅ TICKET-011: Login Screen UI
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-011: Login Screen UI
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Frontend, UI
 
@@ -186,8 +186,8 @@ Create login screen with username input and validation using Scene2D.
 - [x] Transition to chat screen on successful login
 - [x] Style UI elements appropriately
 
-### ✅ TICKET-012: Chat Screen UI
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-012: Chat Screen UI
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Frontend, UI
 
@@ -205,8 +205,8 @@ Create chat screen with message list, message input, and send button.
 - [x] Connect to WebSocket on screen show
 - [x] Load message history on connection
 
-### ✅ TICKET-013: Real-time Message Display
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-013: Real-time Message Display
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Frontend, WebSocket
 
@@ -220,8 +220,8 @@ Implement real-time message reception and display in the chat screen.
 - [x] Update UI on LibGDX render thread (gdx.app.postRunnable)
 - [x] Test with multiple client instances
 
-### ✅ TICKET-014: Input Validation and Error Handling
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-014: Input Validation and Error Handling
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Backend, Frontend
 
@@ -236,8 +236,8 @@ Implement comprehensive input validation and error handling across the applicati
 - [x] Frontend: Display error messages to user
 - [x] Add logging for debugging
 
-### ✅ TICKET-015: MVP Documentation
-**Status:** ✅ Completed  
+### [COMPLETED] TICKET-015: MVP Documentation
+**Status:** [COMPLETED] Completed  
 **Priority:** P0  
 **Component:** Documentation
 
@@ -255,10 +255,10 @@ Create comprehensive documentation for MVP including setup, usage, and API refer
 
 ---
 
-## Phase 2: Enhanced Features - 📋 PLANNED
+## Phase 2: Enhanced Features - [PLANNED] PLANNED
 
-### 📋 TICKET-101: Multiple Chat Rooms/Channels
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-101: Multiple Chat Rooms/Channels
+**Status:** [PLANNED] Planned  
 **Priority:** P1  
 **Component:** Backend, Frontend, Database
 
@@ -284,8 +284,8 @@ Extend the application to support multiple chat rooms/channels. Users can create
 
 **Dependencies:** None
 
-### 📋 TICKET-102: User Authentication System
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-102: User Authentication System
+**Status:** [PLANNED] Planned  
 **Priority:** P1  
 **Component:** Backend, Security
 
@@ -308,8 +308,8 @@ Implement password-based authentication with Spring Security for secure user acc
 
 **Dependencies:** None
 
-### 📋 TICKET-103: Private Direct Messages
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-103: Private Direct Messages
+**Status:** [PLANNED] Planned  
 **Priority:** P1  
 **Component:** Backend, Frontend
 
@@ -333,8 +333,8 @@ Implement one-on-one direct messaging between users separate from public channel
 
 **Dependencies:** TICKET-102 (User Authentication)
 
-### 📋 TICKET-104: User Online/Offline Status
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-104: User Online/Offline Status
+**Status:** [PLANNED] Planned  
 **Priority:** P2  
 **Component:** Backend, Frontend, WebSocket
 
@@ -356,8 +356,8 @@ Track and display user online/offline status in real-time using WebSocket lifecy
 
 **Dependencies:** None
 
-### 📋 TICKET-105: Typing Indicators
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-105: Typing Indicators
+**Status:** [PLANNED] Planned  
 **Priority:** P2  
 **Component:** Backend, Frontend, WebSocket
 
@@ -378,8 +378,8 @@ Show typing indicators when users are composing messages in a channel.
 
 **Dependencies:** TICKET-101 (Multiple Channels)
 
-### 📋 TICKET-106: Enhanced Message Timestamps in UI
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-106: Enhanced Message Timestamps in UI
+**Status:** [PLANNED] Planned  
 **Priority:** P2  
 **Component:** Frontend
 
@@ -398,8 +398,8 @@ Improve timestamp display in the UI with relative times and formatting.
 
 **Dependencies:** None
 
-### 📋 TICKET-107: User List Panel
-**Status:** 📋 Planned  
+### [PLANNED] TICKET-107: User List Panel
+**Status:** [PLANNED] Planned  
 **Priority:** P2  
 **Component:** Frontend
 
@@ -422,10 +422,10 @@ Add a user list panel showing all users in the current channel with their online
 
 ---
 
-## Phase 3: Advanced Features - 🔮 FUTURE
+## Phase 3: Advanced Features - [FUTURE] FUTURE
 
-### 🔮 TICKET-201: File and Image Uploads
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-201: File and Image Uploads
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Backend, Frontend, Storage
 
@@ -449,8 +449,8 @@ Enable users to upload and share files and images in chat messages.
 
 **Dependencies:** TICKET-102 (Authentication)
 
-### 🔮 TICKET-202: Emoji Picker and Reactions
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-202: Emoji Picker and Reactions
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Frontend
 
@@ -472,8 +472,8 @@ Add emoji picker for message composition and emoji reactions to messages.
 
 **Dependencies:** TICKET-102 (Authentication)
 
-### 🔮 TICKET-203: Message Search
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-203: Message Search
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Backend, Frontend
 
@@ -495,8 +495,8 @@ Implement full-text search for messages within channels and DMs.
 
 **Dependencies:** None
 
-### 🔮 TICKET-204: User Profiles and Avatars
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-204: User Profiles and Avatars
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Backend, Frontend
 
@@ -519,8 +519,8 @@ Add user profiles with customizable avatars, display names, and status messages.
 
 **Dependencies:** TICKET-201 (File Uploads for avatars)
 
-### 🔮 TICKET-205: User Roles and Permissions
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-205: User Roles and Permissions
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Backend, Security
 
@@ -542,8 +542,8 @@ Implement role-based access control with admin, moderator, and member roles.
 
 **Dependencies:** TICKET-102 (Authentication)
 
-### 🔮 TICKET-206: Message Editing and Deletion
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-206: Message Editing and Deletion
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Backend, Frontend
 
@@ -567,8 +567,8 @@ Allow users to edit and delete their own messages (with optional time limits).
 
 **Dependencies:** TICKET-102 (Authentication)
 
-### 🔮 TICKET-207: Voice Channels (Stretch Goal)
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-207: Voice Channels (Stretch Goal)
+**Status:** [FUTURE] Future  
 **Priority:** P3  
 **Component:** Backend, Frontend, WebRTC
 
@@ -593,10 +593,10 @@ Add voice chat capability using WebRTC for real-time audio communication.
 
 ---
 
-## Phase 4: Production Ready - 🔮 FUTURE
+## Phase 4: Production Ready - [FUTURE] FUTURE
 
-### 🔮 TICKET-301: PostgreSQL/MySQL Database Migration
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-301: PostgreSQL/MySQL Database Migration
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, Database
 
@@ -618,8 +618,8 @@ Replace H2 in-memory database with PostgreSQL or MySQL for production persistenc
 
 **Dependencies:** None
 
-### 🔮 TICKET-302: Advanced Docker Configuration
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-302: Advanced Docker Configuration
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** DevOps, Docker
 
@@ -642,8 +642,8 @@ Enhance Docker setup with multi-stage builds, health checks, and volume manageme
 
 **Dependencies:** TICKET-301 (Production Database)
 
-### 🔮 TICKET-303: User Registration with Email
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-303: User Registration with Email
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, Frontend, Email
 
@@ -667,8 +667,8 @@ Implement full user registration flow with email verification.
 
 **Dependencies:** TICKET-102 (Authentication)
 
-### 🔮 TICKET-304: Password Reset Functionality
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-304: Password Reset Functionality
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, Frontend, Email
 
@@ -691,8 +691,8 @@ Implement secure password reset flow with email-based token verification.
 
 **Dependencies:** TICKET-303 (Email Registration)
 
-### 🔮 TICKET-305: Rate Limiting and Security Hardening
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-305: Rate Limiting and Security Hardening
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, Security
 
@@ -716,8 +716,8 @@ Implement rate limiting and additional security measures to prevent abuse and at
 
 **Dependencies:** TICKET-302 (Production Deployment)
 
-### 🔮 TICKET-306: Mobile Support (Android/iOS)
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-306: Mobile Support (Android/iOS)
+**Status:** [FUTURE] Future  
 **Priority:** P2  
 **Component:** Frontend, Mobile
 
@@ -740,8 +740,8 @@ Add Android and iOS support using LibGDX's cross-platform capabilities.
 
 **Dependencies:** None (can be done in parallel)
 
-### 🔮 TICKET-307: Comprehensive Logging and Monitoring
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-307: Comprehensive Logging and Monitoring
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, DevOps
 
@@ -764,8 +764,8 @@ Implement comprehensive logging and monitoring for production observability.
 
 **Dependencies:** TICKET-302 (Production Deployment)
 
-### 🔮 TICKET-308: Backup and Restore Functionality
-**Status:** 🔮 Future  
+### [FUTURE] TICKET-308: Backup and Restore Functionality
+**Status:** [FUTURE] Future  
 **Priority:** P1  
 **Component:** Backend, Database, DevOps
 
