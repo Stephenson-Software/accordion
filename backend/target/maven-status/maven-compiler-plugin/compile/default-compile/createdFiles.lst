@@ -1,0 +1,11 @@
+com/accord/controller/UserController.class
+com/accord/service/ChatService.class
+com/accord/AccordApplication.class
+com/accord/service/UserService.class
+com/accord/repository/ChatMessageRepository.class
+com/accord/controller/ChatController.class
+com/accord/model/ChatMessage.class
+com/accord/repository/UserRepository.class
+com/accord/config/WebSocketConfig.class
+com/accord/controller/MessageRestController.class
+com/accord/model/User.class
