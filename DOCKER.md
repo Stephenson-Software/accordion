@@ -73,11 +73,21 @@ To run on custom ports, edit your `.env` file:
 
 ```bash
 # Custom port configuration
-BACKEND_PORT=9090
-WEBAPP_PORT=4000
-SERVER_PORT=9090
-WEBAPP_SERVER_PORT=4000
+BACKEND_PORT=9090           # Host port for backend
+SERVER_PORT=9090            # Container port for backend
+WEBAPP_PORT=4000            # Host port for webapp
+WEBAPP_SERVER_PORT=4000     # Container port for webapp
+
+# IMPORTANT: Update backend URLs to match SERVER_PORT
+ACCORD_BACKEND_URL=http://backend:9090
+ACCORD_BACKEND_WS_URL=http://backend:9090/ws
 ```
+
+**Important Notes:**
+- `BACKEND_PORT` and `SERVER_PORT` should typically be the same for simplicity
+- `WEBAPP_PORT` and `WEBAPP_SERVER_PORT` should typically be the same
+- When changing `SERVER_PORT`, you **must** also update `ACCORD_BACKEND_URL` and `ACCORD_BACKEND_WS_URL`
+- The backend URLs use the internal Docker service name `backend`, not `localhost`
 
 Then start the services:
 
@@ -272,6 +282,37 @@ services:
 
 ## Troubleshooting
 
+### Backend Service Hangs or Fails to Start After Changing Ports
+
+If you change ports and the backend service hangs or the health check fails:
+
+1. **Ensure port consistency**: When changing `SERVER_PORT`, also update the backend URLs:
+   ```bash
+   # In .env file
+   SERVER_PORT=9090
+   ACCORD_BACKEND_URL=http://backend:9090
+   ACCORD_BACKEND_WS_URL=http://backend:9090/ws
+   ```
+
+2. **Use matching internal/external ports for simplicity**:
+   ```bash
+   # Recommended configuration
+   BACKEND_PORT=9090
+   SERVER_PORT=9090
+   ```
+
+3. **Rebuild containers after changing configuration**:
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+
+4. **Check health check status**:
+   ```bash
+   docker compose ps
+   # Look for "health: starting" or "unhealthy" status
+   ```
+
 ### Container Won't Start
 
 ```bash
@@ -285,9 +326,11 @@ docker compose ps
 ### Port Already in Use
 
 ```bash
-# Change port mapping in compose.yml
-ports:
-  - "8081:8080"  # Map to 8081 on host
+# Change BACKEND_PORT in .env file
+BACKEND_PORT=8081
+
+# Or specify directly
+docker compose up -d
 ```
 
 ### Health Check Failing

@@ -39,7 +39,7 @@ services:
       - APP_USERNAME_MIN_LENGTH=${APP_USERNAME_MIN_LENGTH:-3}
     
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/messages"]
+      test: ["CMD", "sh", "-c", "wget --no-verbose --tries=1 --spider http://localhost:$${SERVER_PORT:-8080}/api/messages"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -74,7 +74,7 @@ services:
         condition: service_healthy
     
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "sh", "-c", "wget --no-verbose --tries=1 --spider http://localhost:$${SERVER_PORT:-3000}/"]
       interval: 30s
       timeout: 10s
       retries: 3
