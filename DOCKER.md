@@ -312,6 +312,7 @@ If the web application shows "Could not connect to server" errors:
    ACCORD_BACKEND_WS_URL=http://backend:8080/ws
    
    # Client-side URLs (browser → backend, must use localhost or public domain)
+   DOCKER_HOST_IP=localhost
    ACCORD_BACKEND_CLIENT_URL=http://localhost:8080
    ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws
    ```
@@ -321,14 +322,16 @@ If the web application shows "Could not connect to server" errors:
    # Example with custom port 9090
    BACKEND_PORT=9090
    SERVER_PORT=9090
-   ACCORD_BACKEND_CLIENT_URL=http://localhost:9090
-   ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
+   DOCKER_HOST_IP=localhost
+   ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:9090
+   ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:9090/ws
    ```
 
 3. **For production with a public domain**:
    ```bash
-   ACCORD_BACKEND_CLIENT_URL=https://api.yourdomain.com
-   ACCORD_BACKEND_CLIENT_WS_URL=https://api.yourdomain.com/ws
+   DOCKER_HOST_IP=yourdomain.com
+   ACCORD_BACKEND_CLIENT_URL=https://${DOCKER_HOST_IP}
+   ACCORD_BACKEND_CLIENT_WS_URL=https://${DOCKER_HOST_IP}/ws
    ```
 
 4. **Rebuild and restart**:
@@ -336,6 +339,56 @@ If the web application shows "Could not connect to server" errors:
    docker compose down
    docker compose up -d --build
    ```
+
+### Accessing from Other Machines on Your Network
+
+To access the web application from other devices on your local network (e.g., phones, tablets, or other computers):
+
+1. **Find your host machine's IP address**:
+   ```bash
+   # Linux/Mac
+   ip addr show | grep "inet " | grep -v 127.0.0.1
+   # or
+   ifconfig | grep "inet " | grep -v 127.0.0.1
+   
+   # Windows
+   ipconfig | findstr IPv4
+   ```
+   
+   Example output: `192.168.1.100`
+
+2. **Update your `.env` file with the host IP**:
+   ```bash
+   DOCKER_HOST_IP=192.168.1.100
+   # URLs will automatically resolve using the DOCKER_HOST_IP variable:
+   # ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:8080
+   # ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:8080/ws
+   ```
+
+3. **Update CORS to allow network access**:
+   ```bash
+   # Allow all origins (development only)
+   APP_CORS_ALLOWED_ORIGINS=*
+   
+   # Or specify your network devices (more secure)
+   APP_CORS_ALLOWED_ORIGINS=http://192.168.1.100:3000,http://192.168.1.101:3000
+   ```
+
+4. **Rebuild and restart**:
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+
+5. **Access from other devices**:
+   - Open browser on any device on your network
+   - Navigate to: `http://192.168.1.100:3000` (use your actual IP)
+   - Login and chat!
+
+**Important Notes**:
+- Ensure your firewall allows incoming connections on the configured ports (default: 3000, 8080)
+- The `DOCKER_HOST_IP` variable makes it easy to configure network access without manually updating multiple URLs
+- For production deployments, always use specific CORS origins instead of `*`
 
 ### Backend Service Hangs or Fails to Start After Changing Ports
 

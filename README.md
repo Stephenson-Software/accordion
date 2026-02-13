@@ -47,6 +47,11 @@ docker compose up -d
 
 # Access the web application
 open http://localhost:3000
+
+# For network access from other devices:
+# 1. Set DOCKER_HOST_IP to your machine's IP in .env
+# 2. Restart: docker compose down && docker compose up -d
+# 3. Access from other devices: http://YOUR_IP:3000
 ```
 
 **Option 2: Run services manually**

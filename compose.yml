@@ -70,7 +70,11 @@ services:
       
       # Backend configuration (client-side, browser access)
       # Must be accessible from the user's browser
-      # Use localhost for local development, or your public domain for production
+      # Use DOCKER_HOST_IP variable for flexible network access
+      # For local development: localhost
+      # For network access: your machine's IP (e.g., 192.168.1.100)
+      # For production: your public domain
+      - DOCKER_HOST_IP=${DOCKER_HOST_IP:-localhost}
       - ACCORD_BACKEND_CLIENT_URL=${ACCORD_BACKEND_CLIENT_URL:-http://localhost:8080}
       - ACCORD_BACKEND_CLIENT_WS_URL=${ACCORD_BACKEND_CLIENT_WS_URL:-http://localhost:8080/ws}
     
