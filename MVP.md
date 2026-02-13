@@ -145,14 +145,27 @@ spring.jpa.hibernate.ddl-auto=create-drop
 spring.h2.console.enabled=true
 spring.h2.console.path=/h2-console
 
-# WebSocket
-spring.websocket.allowed-origins=*
+# CORS Configuration (set to specific origins in production)
+app.cors.allowed-origins=*
+
+# Message Content Validation
+app.message.max-length=1000
+
+# Username Validation
+app.username.max-length=50
+app.username.min-length=3
 ```
 
+**Security Note**: For production deployment, replace `app.cors.allowed-origins=*` with specific trusted domains (e.g., `https://yourdomain.com`).
+
 ### Frontend Configuration
-- WebSocket endpoint: `ws://localhost:8080/ws`
-- Window size: 800x600
-- Title: "Accord Chat"
+- **WebSocket endpoint**: Configurable via `AppConfig.getWebSocketUrl()`
+  - Default: `ws://localhost:8080/ws`
+  - Override with system property: `-Daccord.websocket.url=ws://yourserver.com:8080/ws`
+- **Window size**: 800x600
+- **Title**: "Accord Chat"
+- **Username constraints**: 3-50 characters, alphanumeric and underscore only
+- **Message length**: Maximum 1000 characters
 
 ## Project Structure
 
@@ -284,13 +297,46 @@ cd frontend
 1. Start backend server
 2. Verify H2 console access
 3. Start frontend application
-4. Enter username and login
+4. Enter username and login (test validation: min 3 chars, max 50 chars, alphanumeric + underscore)
 5. Send a test message
-6. Open second client instance
-7. Verify message appears in both clients
-8. Close and reopen client
-9. Verify message history loads
-10. Test special characters and emoji
+6. Test message length limit (1000 characters)
+7. Test invalid username characters (should be rejected)
+8. Open second client instance
+9. Verify message appears in both clients
+10. Close and reopen client
+11. Verify message history loads
+12. Test connection error handling (disconnect server)
+
+## Security
+
+### MVP Security Features
+- ✅ **Input Validation**: Username and message content validation
+  - Username: 3-50 characters, alphanumeric and underscore only
+  - Message: Maximum 1000 characters
+- ✅ **CORS Configuration**: Configurable via environment variables
+- ✅ **Database Constraints**: Length limits enforced at database level
+- ✅ **Request Limits**: Message history API limited to 500 messages max
+- ✅ **Error Handling**: Proper exception handling with user-friendly messages
+- ✅ **Logging**: Structured logging with java.util.logging
+
+### Security Limitations (MVP)
+- ⚠️ **No Authentication**: Username-only login (no passwords)
+- ⚠️ **No Authorization**: All users can see all messages
+- ⚠️ **No Encryption**: Messages sent in plain text over WebSocket
+- ⚠️ **No Rate Limiting**: No protection against spam or DoS
+- ⚠️ **CORS Default**: Allows all origins by default (must configure for production)
+
+### Production Security Recommendations
+1. **Enable HTTPS/WSS**: Use TLS for all connections
+2. **Configure CORS**: Set `app.cors.allowed-origins` to specific trusted domains
+3. **Add Authentication**: Implement password-based or OAuth authentication
+4. **Add Authorization**: Implement role-based access control
+5. **Enable Rate Limiting**: Prevent abuse and DoS attacks
+6. **Input Sanitization**: Additional validation for XSS prevention
+7. **Security Headers**: Add security headers (CSP, HSTS, etc.)
+8. **Audit Logging**: Log security-relevant events
+9. **Regular Updates**: Keep dependencies up to date
+10. **Security Scanning**: Run regular vulnerability scans
 
 ## Troubleshooting
 
