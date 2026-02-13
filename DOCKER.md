@@ -1,27 +1,97 @@
 # Docker Deployment Guide
 
-This guide covers deploying the Accord Chat backend using Docker and Docker Compose.
+This guide covers deploying the Accord Chat application (backend and web application) using Docker and Docker Compose.
 
 ## Quick Start
 
 ### Using Docker Compose (Recommended)
 
 ```bash
-# Start the backend
+# Copy and customize environment configuration
+cp sample.env .env
+# Edit .env to customize ports and settings
+
+# Start all services (backend + webapp)
 docker compose up -d
 
 # View logs
-docker compose logs -f backend
+docker compose logs -f
 
-# Stop the service
+# Stop the services
 docker compose down
 ```
 
-The backend will be available at `http://localhost:8080`.
+The services will be available at:
+- **Web Application**: `http://localhost:3000` (or your custom `WEBAPP_PORT`)
+- **Backend API**: `http://localhost:8080` (or your custom `BACKEND_PORT`)
+
+## Environment Configuration
+
+The application is configured using environment variables. A `sample.env` file is provided with all available options.
+
+### Configuration File Setup
+
+```bash
+# Create your environment file from the sample
+cp sample.env .env
+
+# Edit .env to customize your deployment
+nano .env  # or use your preferred editor
+```
+
+### Key Configuration Options
+
+#### Port Configuration
+- `BACKEND_PORT`: Backend service port (default: 8080)
+- `WEBAPP_PORT`: Web application port (default: 3000)
+- `SERVER_PORT`: Internal backend container port (default: 8080)
+- `WEBAPP_SERVER_PORT`: Internal webapp container port (default: 3000)
+
+#### Security & CORS
+- `APP_CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed origins
+  - Development: `*` (allows all origins)
+  - Production: `http://localhost:3000,https://chat.example.com`
+
+#### Validation Rules
+- `APP_MESSAGE_MAX_LENGTH`: Maximum message length in characters (default: 1000)
+- `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
+- `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
+
+#### Database Configuration (H2)
+- `SPRING_DATASOURCE_URL`: Database connection URL
+- `SPRING_DATASOURCE_USERNAME`: Database username
+- `SPRING_DATASOURCE_PASSWORD`: Database password
+- `SPRING_JPA_HIBERNATE_DDL_AUTO`: Schema generation strategy
+
+#### Backend Connection (for webapp)
+- `ACCORD_BACKEND_URL`: Backend API base URL
+- `ACCORD_BACKEND_WS_URL`: Backend WebSocket URL
+
+### Example: Custom Ports
+
+To run on custom ports, edit your `.env` file:
+
+```bash
+# Custom port configuration
+BACKEND_PORT=9090
+WEBAPP_PORT=4000
+SERVER_PORT=9090
+WEBAPP_SERVER_PORT=4000
+```
+
+Then start the services:
+
+```bash
+docker compose up -d
+```
+
+Access:
+- Web app: `http://localhost:4000`
+- Backend API: `http://localhost:9090`
 
 ## Docker Compose Configuration
 
-The `compose.yml` file provides a complete configuration for running the backend:
+The `compose.yml` file provides a complete configuration for running both services:
 
 - **Port Mapping**: Backend accessible on `http://localhost:8080`
 - **Health Checks**: Automatic health monitoring

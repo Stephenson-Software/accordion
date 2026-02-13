@@ -38,6 +38,10 @@ Accord is a Discord-like self-hosted chat application designed for simplicity an
 **Option 1: Using Docker Compose (Recommended)**
 
 ```bash
+# Copy sample environment file and customize if needed
+cp sample.env .env
+# Edit .env to configure ports and other settings
+
 # Start all services (backend + web app)
 docker compose up -d
 
@@ -101,6 +105,33 @@ cd frontend && ./gradlew desktop:run
 - Docker 20.10+ 
 - Docker Compose 2.0+
 
+### Configuration
+
+The application uses environment variables for configuration. A `sample.env` file is provided with all available options:
+
+```bash
+# Copy and customize the environment file
+cp sample.env .env
+
+# Edit .env to configure:
+# - Port numbers (BACKEND_PORT, WEBAPP_PORT)
+# - CORS settings (APP_CORS_ALLOWED_ORIGINS)
+# - Database configuration
+# - Validation rules (message length, username constraints)
+# - And more...
+```
+
+**Key configuration options:**
+
+- `BACKEND_PORT`: Backend service port (default: 8080)
+- `WEBAPP_PORT`: Web application port (default: 3000)
+- `APP_CORS_ALLOWED_ORIGINS`: CORS allowed origins (default: `*` for development)
+- `APP_MESSAGE_MAX_LENGTH`: Maximum message length (default: 1000)
+- `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
+- `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
+
+See `sample.env` for the complete list of configurable options.
+
 ### Running with Docker Compose
 
 The easiest way to run the backend in a container:
@@ -119,6 +150,8 @@ docker compose down
 The services will be available at:
 - **Web Application**: `http://localhost:3000` (browser-based UI)
 - **Backend API**: `http://localhost:8080` (REST & WebSocket)
+
+**Note:** If you customized ports in `.env`, use those port numbers instead.
 
 ### Building Docker Images Manually
 

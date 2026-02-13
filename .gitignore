@@ -46,3 +46,6 @@ Thumbs.db
 *.db
 *.mv.db
 *.trace.db
+
+# Environment configuration
+.env
