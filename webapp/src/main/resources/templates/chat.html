@@ -16,11 +16,78 @@
             height: 100vh;
             overflow: hidden;
             background: #f5f5f5;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #2c2f33;
+            color: #dcddde;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #202225;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background: #202225;
+            border-bottom: 1px solid #000;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .channels-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .channel-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .channel-item:hover {
+            background: #393c43;
+        }
+
+        .channel-item.active {
+            background: #5865f2;
+            color: white;
+        }
+
+        .channel-item::before {
+            content: '#';
+            font-weight: 600;
+            opacity: 0.6;
+        }
+
+        .add-channel-btn {
+            margin: 8px;
+            padding: 10px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .add-channel-btn:hover {
+            background: #4752c4;
         }
 
         .chat-container {
             display: flex;
             flex-direction: column;
+            flex: 1;
             height: 100vh;
         }
 
@@ -37,6 +104,12 @@
         .chat-header h1 {
             font-size: 1.5em;
             font-weight: 600;
+        }
+
+        .channel-name {
+            font-size: 0.9em;
+            margin-top: 4px;
+            opacity: 0.9;
         }
 
         .status {
@@ -192,14 +265,103 @@
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-content input,
+        .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .modal-content textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-buttons .btn-primary {
+            background: #5865f2;
+            color: white;
+        }
+
+        .modal-buttons .btn-primary:hover {
+            background: #4752c4;
+        }
+
+        .modal-buttons .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-buttons .btn-secondary:hover {
+            background: #d0d0d0;
+        }
     </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="sidebar-header">Channels</div>
+        <div class="channels-list" id="channelsList">
+            <!-- Channels will be populated here -->
+        </div>
+        <button class="add-channel-btn" onclick="showCreateChannelModal()">+ New Channel</button>
+    </div>
+
     <div class="chat-container">
         <div class="chat-header">
             <div>
                 <h1>Accord Chat</h1>
-                <div style="font-size: 0.9em; margin-top: 4px;">
+                <div class="channel-name"># <span id="currentChannelName">general</span></div>
+                <div style="font-size: 0.85em; margin-top: 4px;">
                     Logged in as: <strong id="currentUsername"></strong>
                 </div>
             </div>
@@ -228,6 +390,22 @@
         </div>
     </div>
 
+    <!-- Create Channel Modal -->
+    <div class="modal" id="createChannelModal">
+        <div class="modal-content">
+            <h2>Create New Channel</h2>
+            <form id="createChannelForm">
+                <input type="text" id="channelName" placeholder="Channel name (e.g., random, tech-talk)" 
+                       required pattern="[a-zA-Z0-9_-]+" minlength="3" maxlength="50">
+                <textarea id="channelDescription" placeholder="Channel description (optional)"></textarea>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="hideCreateChannelModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <script th:inline="javascript">
@@ -249,6 +427,9 @@
         let lastMessage = null; // Track last message for duplicate detection
         let historyLoaded = false; // Track if historical messages have been loaded
         let messageQueue = []; // Buffer for messages received during history loading
+        let currentChannelId = 1; // Default to general channel
+        let currentSubscription = null; // Track current channel subscription
+        let channels = []; // Store available channels
 
         function connect() {
             const socket = new SockJS(backendWsUrl);
@@ -261,14 +442,17 @@
             connected = true;
             updateStatus(true);
             
-            // Subscribe to the public topic
-            stompClient.subscribe('/topic/messages', onMessageReceived);
+            // Load channels first
+            await loadChannels();
             
-            // Load recent messages first
+            // Subscribe to current channel
+            subscribeToChannel(currentChannelId);
+            
+            // Load recent messages
             await loadRecentMessages();
             
             // Send join notification after messages are loaded
-            stompClient.send("/app/chat.join", {}, JSON.stringify({
+            stompClient.send(`/app/chat.join/${currentChannelId}`, {}, JSON.stringify({
                 username: username
             }));
             
@@ -310,7 +494,7 @@
                     content: content
                 };
                 
-                stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+                stompClient.send(`/app/chat.send/${currentChannelId}`, {}, JSON.stringify(chatMessage));
                 messageInput.value = '';
             }
         }
@@ -397,7 +581,7 @@
 
         async function loadRecentMessages() {
             try {
-                const response = await fetch(`${backendUrl}/api/messages?limit=50`);
+                const response = await fetch(`${backendUrl}/api/messages?limit=50&channelId=${currentChannelId}`);
                 if (response.ok) {
                     const messages = await response.json();
                     messages.forEach(message => displayMessage(message));
@@ -409,6 +593,119 @@
                 historyLoaded = true;
                 messageQueue.forEach(message => displayMessage(message));
                 messageQueue = []; // Clear the queue
+            }
+        }
+
+        async function loadChannels() {
+            try {
+                const response = await fetch(`${backendUrl}/api/channels`);
+                if (response.ok) {
+                    channels = await response.json();
+                    displayChannels();
+                }
+            } catch (error) {
+                console.error('Error loading channels:', error);
+            }
+        }
+
+        function displayChannels() {
+            const channelsList = document.getElementById('channelsList');
+            channelsList.innerHTML = '';
+            
+            channels.forEach(channel => {
+                const channelItem = document.createElement('div');
+                channelItem.className = 'channel-item';
+                if (channel.id === currentChannelId) {
+                    channelItem.classList.add('active');
+                }
+                channelItem.textContent = channel.name;
+                channelItem.onclick = () => switchChannel(channel.id, channel.name);
+                channelsList.appendChild(channelItem);
+            });
+        }
+
+        function subscribeToChannel(channelId) {
+            // Unsubscribe from previous channel if any
+            if (currentSubscription) {
+                currentSubscription.unsubscribe();
+            }
+            
+            // Subscribe to new channel
+            currentSubscription = stompClient.subscribe(`/topic/messages/${channelId}`, onMessageReceived);
+        }
+
+        function switchChannel(channelId, channelName) {
+            if (channelId === currentChannelId) return;
+            
+            // Update current channel
+            currentChannelId = channelId;
+            document.getElementById('currentChannelName').textContent = channelName;
+            
+            // Clear messages
+            document.getElementById('messages').innerHTML = '';
+            lastMessage = null;
+            historyLoaded = false;
+            messageQueue = [];
+            
+            // Subscribe to new channel
+            subscribeToChannel(channelId);
+            
+            // Load messages for new channel
+            loadRecentMessages();
+            
+            // Update UI
+            displayChannels();
+            
+            // Send join notification
+            stompClient.send(`/app/chat.join/${channelId}`, {}, JSON.stringify({
+                username: username
+            }));
+        }
+
+        function showCreateChannelModal() {
+            document.getElementById('createChannelModal').classList.add('active');
+        }
+
+        function hideCreateChannelModal() {
+            document.getElementById('createChannelModal').classList.remove('active');
+            document.getElementById('createChannelForm').reset();
+        }
+
+        async function createChannel(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('channelName').value.trim();
+            const description = document.getElementById('channelDescription').value.trim();
+            
+            try {
+                const response = await fetch(`${backendUrl}/api/channels`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description,
+                        createdBy: username
+                    })
+                });
+                
+                if (response.ok) {
+                    const newChannel = await response.json();
+                    hideCreateChannelModal();
+                    
+                    // Reload channels
+                    await loadChannels();
+                    
+                    // Switch to new channel
+                    switchChannel(newChannel.id, newChannel.name);
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to create channel');
+                }
+            } catch (error) {
+                console.error('Error creating channel:', error);
+                alert('Failed to create channel');
             }
         }
 
@@ -441,6 +738,7 @@
 
         // Event listeners
         document.getElementById('messageForm').addEventListener('submit', sendMessage);
+        document.getElementById('createChannelForm').addEventListener('submit', createChannel);
 
         // Connect on page load
         connect();
