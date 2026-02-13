@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.github
+
+# Maven
+backend/target
+
+# Gradle
+frontend/.gradle
+frontend/build
+frontend/*/build
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+.settings
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Frontend (not needed for backend container)
+frontend
+
+# H2 Database files
+*.db
+*.mv.db
+*.trace.db

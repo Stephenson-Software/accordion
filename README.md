@@ -62,6 +62,66 @@ cd frontend && ./gradlew desktop:run
 5. **Type your message** and click "Send" or press Enter
 6. **Open multiple clients** to test real-time messaging
 
+## Docker Deployment
+
+### Prerequisites for Docker
+
+- Docker 20.10+ 
+- Docker Compose 2.0+
+
+### Running with Docker Compose
+
+The easiest way to run the backend in a container:
+
+```bash
+# Build and start the backend
+docker compose up -d
+
+# View logs
+docker compose logs -f backend
+
+# Stop the service
+docker compose down
+```
+
+The backend will be available at `http://localhost:8080`.
+
+### Building Docker Image Manually
+
+```bash
+# Build the image
+docker build -t accord-backend:latest .
+
+# Run the container
+docker run -d \
+  -p 8080:8080 \
+  --name accord-backend \
+  accord-backend:latest
+
+# View logs
+docker logs -f accord-backend
+
+# Stop and remove
+docker stop accord-backend
+docker rm accord-backend
+```
+
+### Environment Variables
+
+Configure the application using environment variables:
+
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com" \
+  -e APP_USERNAME_MIN_LENGTH=5 \
+  -e APP_MESSAGE_MAX_LENGTH=500 \
+  --name accord-backend \
+  accord-backend:latest
+```
+
+See `compose.yml` for all available environment variables.
+
 ### Accessing H2 Console (Optional)
 
 View the database contents:
@@ -76,6 +136,9 @@ View the database contents:
 accord-prototype/
 ├── MVP.md                          # Detailed MVP documentation
 ├── README.md                       # This file
+├── Dockerfile                      # Docker image for backend
+├── compose.yml                     # Docker Compose configuration
+├── .dockerignore                   # Docker build exclusions
 ├── backend/                        # Spring Boot backend
 │   ├── pom.xml                    # Maven configuration
 │   └── src/main/java/com/accord/
