@@ -247,6 +247,8 @@
         let stompClient = null;
         let connected = false;
         let lastMessage = null; // Track last message for duplicate detection
+        let historyLoaded = false; // Track if historical messages have been loaded
+        let messageQueue = []; // Buffer for messages received during history loading
 
         function connect() {
             const socket = new SockJS(backendWsUrl);
@@ -286,6 +288,13 @@
 
         function onMessageReceived(payload) {
             const message = JSON.parse(payload.body);
+            
+            // If history hasn't loaded yet, queue the message
+            if (!historyLoaded) {
+                messageQueue.push(message);
+                return;
+            }
+            
             displayMessage(message);
         }
 
@@ -395,6 +404,11 @@
                 }
             } catch (error) {
                 console.error('Error loading messages:', error);
+            } finally {
+                // Mark history as loaded and flush any queued messages
+                historyLoaded = true;
+                messageQueue.forEach(message => displayMessage(message));
+                messageQueue = []; // Clear the queue
             }
         }
 
