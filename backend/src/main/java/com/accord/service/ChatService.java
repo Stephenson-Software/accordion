@@ -16,14 +16,26 @@ public class ChatService {
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
-    public ChatMessage saveMessage(String username, String content) {
-        ChatMessage message = new ChatMessage(username, content);
+    public ChatMessage saveMessage(String username, String content, Long channelId) {
+        ChatMessage message = new ChatMessage(username, content, channelId);
         return chatMessageRepository.save(message);
+    }
+
+    public ChatMessage saveMessage(String username, String content) {
+        // For backwards compatibility, default to channel 1 (general)
+        return saveMessage(username, content, 1L);
     }
 
     public List<ChatMessage> getRecentMessages(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<ChatMessage> messages = chatMessageRepository.findAllByOrderByTimestampDesc(pageable);
+        Collections.reverse(messages); // Show oldest first
+        return messages;
+    }
+
+    public List<ChatMessage> getRecentMessagesByChannel(Long channelId, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<ChatMessage> messages = chatMessageRepository.findByChannelIdOrderByTimestampDesc(channelId, pageable);
         Collections.reverse(messages); // Show oldest first
         return messages;
     }
