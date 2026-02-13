@@ -173,6 +173,9 @@ public class ChatScreen implements Screen {
         if (isDuplicate && !messages.isEmpty()) {
             // Update the last message with incremented count
             lastMessageCount++;
+            // Note: Format is " (x2)" for LibGDX, while webapp uses a styled badge.
+            // This difference is intentional: LibGDX uses plain text labels,
+            // while webapp can style a separate DOM element with colors/backgrounds.
             String countIndicator = " (x" + lastMessageCount + ")";
             String updatedMessage = String.format("[%s] %s: %s%s", timeStr, msgUsername, content, countIndicator);
             

@@ -318,8 +318,8 @@
                 // Find the last message div
                 const lastMessageDiv = messagesDiv.lastElementChild;
                 if (lastMessageDiv && lastMessageDiv.classList.contains('message')) {
-                    // Increment count in our tracker
-                    lastMessage.count = (lastMessage.count || 1) + 1;
+                    // Increment count in our tracker (always starts at 1, so just increment)
+                    lastMessage.count = lastMessage.count + 1;
                     
                     // Update or add count badge
                     let countBadge = lastMessageDiv.querySelector('.message-count');
