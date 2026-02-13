@@ -255,20 +255,20 @@
             stompClient.connect({}, onConnected, onError);
         }
 
-        function onConnected() {
+        async function onConnected() {
             connected = true;
             updateStatus(true);
             
             // Subscribe to the public topic
             stompClient.subscribe('/topic/messages', onMessageReceived);
             
-            // Send join notification
+            // Load recent messages first
+            await loadRecentMessages();
+            
+            // Send join notification after messages are loaded
             stompClient.send("/app/chat.join", {}, JSON.stringify({
                 username: username
             }));
-            
-            // Load recent messages
-            loadRecentMessages();
             
             // Enable input
             document.getElementById('messageInput').disabled = false;
