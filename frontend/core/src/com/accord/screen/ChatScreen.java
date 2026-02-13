@@ -179,11 +179,12 @@ public class ChatScreen implements Screen {
             // Replace the last message
             messages.set(messages.size() - 1, updatedMessage);
         } else {
-            // Add new message
+            // Add new message (not a duplicate, or different from last message)
             String formattedMessage = String.format("[%s] %s: %s", timeStr, msgUsername, content);
             messages.add(formattedMessage);
             
-            // Update tracking variables to reference the newly added message
+            // Update tracking variables to reference this newly added message
+            // Note: These track content/username, not list indices
             lastMessageUsername = msgUsername;
             lastMessageContent = content;
             lastMessageCount = 1;
@@ -191,8 +192,8 @@ public class ChatScreen implements Screen {
             // Keep only last MAX_MESSAGES
             if (messages.size() > MAX_MESSAGES) {
                 // Remove the oldest message (index 0)
-                // This doesn't affect our tracking because we track the LAST message
-                // which is at the end of the list (index messages.size() - 1)
+                // This is safe: our tracking variables now point to the message we JUST added
+                // (which is at the end of the list), so removing the oldest doesn't affect tracking
                 messages.remove(0);
             }
         }

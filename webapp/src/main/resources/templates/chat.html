@@ -318,25 +318,21 @@
                 // Find the last message div
                 const lastMessageDiv = messagesDiv.lastElementChild;
                 if (lastMessageDiv && lastMessageDiv.classList.contains('message')) {
+                    // Increment count in our tracker
+                    lastMessage.count = (lastMessage.count || 1) + 1;
+                    
                     // Update or add count badge
                     let countBadge = lastMessageDiv.querySelector('.message-count');
                     if (countBadge) {
-                        // Increment existing count
-                        const countText = countBadge.textContent.replace('x', '');
-                        const currentCount = parseInt(countText);
-                        if (isNaN(currentCount) || currentCount < 2) {
-                            console.error('Invalid count badge value:', countBadge.textContent);
-                            countBadge.textContent = 'x2'; // Reset to minimum valid count
-                        } else {
-                            countBadge.textContent = 'x' + (currentCount + 1);
-                        }
+                        // Update existing badge using our tracked count
+                        countBadge.textContent = 'x' + lastMessage.count;
                     } else {
                         // Add count badge for first duplicate
                         const messageHeader = lastMessageDiv.querySelector('.message-header');
                         if (messageHeader) {
                             countBadge = document.createElement('span');
                             countBadge.className = 'message-count';
-                            countBadge.textContent = 'x2';
+                            countBadge.textContent = 'x' + lastMessage.count;
                             messageHeader.appendChild(countBadge);
                         }
                     }
@@ -383,10 +379,11 @@
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Update last message tracker
+            // Update last message tracker with count initialized to 1
             lastMessage = {
                 username: message.username,
-                content: message.content
+                content: message.content,
+                count: 1
             };
         }
 
