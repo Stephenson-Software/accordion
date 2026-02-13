@@ -118,6 +118,19 @@
             word-wrap: break-word;
         }
 
+        .message-count {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            min-width: 20px;
+            text-align: center;
+        }
+
         .input-container {
             background: white;
             padding: 20px;
@@ -233,6 +246,7 @@
 
         let stompClient = null;
         let connected = false;
+        let lastMessage = null; // Track last message for duplicate detection
 
         function connect() {
             const socket = new SockJS(backendWsUrl);
@@ -294,6 +308,52 @@
 
         function displayMessage(message) {
             const messagesDiv = document.getElementById('messages');
+            
+            // Check if this is a consecutive duplicate message (same user and same content)
+            if (lastMessage && 
+                lastMessage.username === message.username && 
+                lastMessage.content === message.content) {
+                
+                // Find the last message div
+                const lastMessageDiv = messagesDiv.lastElementChild;
+                if (lastMessageDiv && lastMessageDiv.classList.contains('message')) {
+                    // Increment count in our tracker (always starts at 1, so just increment)
+                    lastMessage.count = lastMessage.count + 1;
+                    
+                    // Update or add count badge
+                    let countBadge = lastMessageDiv.querySelector('.message-count');
+                    if (countBadge) {
+                        // Update existing badge using our tracked count
+                        countBadge.textContent = 'x' + lastMessage.count;
+                    } else {
+                        // Add count badge for first duplicate
+                        const messageHeader = lastMessageDiv.querySelector('.message-header');
+                        if (messageHeader) {
+                            countBadge = document.createElement('span');
+                            countBadge.className = 'message-count';
+                            countBadge.textContent = 'x' + lastMessage.count;
+                            messageHeader.appendChild(countBadge);
+                        }
+                    }
+                    
+                    // Update the timestamp to show the latest occurrence
+                    const timeSpan = lastMessageDiv.querySelector('.message-time');
+                    if (timeSpan) {
+                        const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        timeSpan.textContent = time;
+                    }
+                    
+                    // Scroll to bottom
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    return; // Don't create a new message div
+                }
+            }
+            
+            // Create new message div
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             
@@ -317,6 +377,13 @@
             
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Update last message tracker with count initialized to 1
+            lastMessage = {
+                username: message.username,
+                content: message.content,
+                count: 1
+            };
         }
 
         async function loadRecentMessages() {
