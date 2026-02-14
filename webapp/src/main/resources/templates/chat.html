@@ -427,7 +427,7 @@
         let lastMessage = null; // Track last message for duplicate detection
         let historyLoaded = false; // Track if historical messages have been loaded
         let messageQueue = []; // Buffer for messages received during history loading
-        let currentChannelId = 1; // Default to general channel
+        let currentChannelId = null; // Will be set from loaded channels
         let currentSubscription = null; // Track current channel subscription
         let channels = []; // Store available channels
 
@@ -444,6 +444,16 @@
             
             // Load channels first
             await loadChannels();
+            
+            // Set currentChannelId from loaded channels (prefer 'general', fallback to first channel)
+            if (channels.length > 0) {
+                const generalChannel = channels.find(ch => ch.name === 'general');
+                currentChannelId = generalChannel ? generalChannel.id : channels[0].id;
+                const currentChannel = channels.find(ch => ch.id === currentChannelId);
+                if (currentChannel) {
+                    document.getElementById('currentChannelName').textContent = currentChannel.name;
+                }
+            }
             
             // Subscribe to current channel
             subscribeToChannel(currentChannelId);
@@ -634,7 +644,7 @@
             currentSubscription = stompClient.subscribe(`/topic/messages/${channelId}`, onMessageReceived);
         }
 
-        function switchChannel(channelId, channelName) {
+        async function switchChannel(channelId, channelName) {
             if (channelId === currentChannelId) return;
             
             // Update current channel
@@ -650,13 +660,13 @@
             // Subscribe to new channel
             subscribeToChannel(channelId);
             
-            // Load messages for new channel
-            loadRecentMessages();
+            // Load messages for new channel (await to avoid race condition with join message)
+            await loadRecentMessages();
             
             // Update UI
             displayChannels();
             
-            // Send join notification
+            // Send join notification after messages are loaded
             stompClient.send(`/app/chat.join/${channelId}`, {}, JSON.stringify({
                 username: username
             }));

@@ -44,17 +44,9 @@ public class ChatController {
 
         String username = payload.get("username");
         String content = payload.get("content");
-        String channelIdStr = payload.get("channelId");
         
-        // Default to channel 1 (general) if not specified
-        Long channelId = 1L;
-        if (channelIdStr != null && !channelIdStr.trim().isEmpty()) {
-            try {
-                channelId = Long.parseLong(channelIdStr);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid channel ID");
-            }
-        }
+        // Legacy /chat.send always uses the default channel (ignore any channelId in payload)
+        Long channelId = channelService.getOrCreateDefaultChannel().getId();
 
         if (!ValidationUtils.isValidUsername(username, minUsernameLength, maxUsernameLength)) {
             throw new IllegalArgumentException("Invalid username");
@@ -108,17 +100,9 @@ public class ChatController {
         }
         
         String username = payload.get("username");
-        String channelIdStr = payload.get("channelId");
         
-        // Default to channel 1 (general) if not specified
-        Long channelId = 1L;
-        if (channelIdStr != null && !channelIdStr.trim().isEmpty()) {
-            try {
-                channelId = Long.parseLong(channelIdStr);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid channel ID");
-            }
-        }
+        // Legacy /chat.join sends to the global topic; always associate with the default channel
+        Long channelId = channelService.getOrCreateDefaultChannel().getId();
         
         if (!ValidationUtils.isValidUsername(username, minUsernameLength, maxUsernameLength)) {
             throw new IllegalArgumentException("The 'username' field must be valid");

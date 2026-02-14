@@ -16,14 +16,18 @@ public class ChatService {
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
+    @Autowired
+    private ChannelService channelService;
+
     public ChatMessage saveMessage(String username, String content, Long channelId) {
         ChatMessage message = new ChatMessage(username, content, channelId);
         return chatMessageRepository.save(message);
     }
 
     public ChatMessage saveMessage(String username, String content) {
-        // For backwards compatibility, default to channel 1 (general)
-        return saveMessage(username, content, 1L);
+        // For backwards compatibility, default to the general channel resolved by ChannelService
+        Long defaultChannelId = channelService.getOrCreateDefaultChannel().getId();
+        return saveMessage(username, content, defaultChannelId);
     }
 
     public List<ChatMessage> getRecentMessages(int limit) {

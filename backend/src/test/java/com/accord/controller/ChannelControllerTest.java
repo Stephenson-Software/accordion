@@ -160,4 +160,22 @@ class ChannelControllerTest {
 
         verify(channelService).createChannel("general", "Test", "TestUser");
     }
+
+    @Test
+    void testCreateChannelWithDescriptionTooLong() throws Exception {
+        String longDescription = "a".repeat(501); // Exceeds 500 character limit
+        
+        Map<String, String> payload = new HashMap<>();
+        payload.put("name", "test-channel");
+        payload.put("description", longDescription);
+        payload.put("createdBy", "TestUser");
+
+        mockMvc.perform(post("/api/channels")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Channel description cannot exceed 500 characters"));
+
+        verify(channelService, never()).createChannel(any(), any(), any());
+    }
 }

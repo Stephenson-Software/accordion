@@ -62,6 +62,12 @@ public class ChannelController {
                     "Channel name can only contain letters, numbers, hyphens, and underscores"));
             }
 
+            // Validate description length (matches JPA column limit)
+            if (description != null && description.length() > 500) {
+                return ResponseEntity.badRequest().body(Map.of("error", 
+                    "Channel description cannot exceed 500 characters"));
+            }
+
             if (createdBy == null || createdBy.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Creator username is required"));
             }
