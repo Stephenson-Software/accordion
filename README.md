@@ -346,7 +346,7 @@ This is an MVP prototype. Contributions are welcome for:
 
 ## License
 
-[To be determined]
+[Stephenson-NC](https://www.github.com/Stephenson-Software/Stephenson-NC-License)
 
 ## Support
 
