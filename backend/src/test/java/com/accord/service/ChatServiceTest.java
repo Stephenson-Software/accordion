@@ -1,5 +1,6 @@
 package com.accord.service;
 
+import com.accord.model.Channel;
 import com.accord.model.ChatMessage;
 import com.accord.repository.ChatMessageRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,19 +26,34 @@ class ChatServiceTest {
     @Mock
     private ChatMessageRepository chatMessageRepository;
 
+    @Mock
+    private ChannelService channelService;
+
     @InjectMocks
     private ChatService chatService;
 
     private ChatMessage testMessage;
+    private Channel defaultChannel;
 
     @BeforeEach
     void setUp() {
         testMessage = new ChatMessage("testuser", "Hello world");
         testMessage.setId(1L);
+        
+        defaultChannel = new Channel("general", "General discussion", "System");
+        // Manually set ID for the mock channel (normally set by JPA)
+        try {
+            java.lang.reflect.Field idField = Channel.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(defaultChannel, 1L);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     void testSaveMessage() {
+        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(testMessage);
 
         ChatMessage result = chatService.saveMessage("testuser", "Hello world");
@@ -45,6 +61,7 @@ class ChatServiceTest {
         assertNotNull(result);
         assertEquals("testuser", result.getUsername());
         assertEquals("Hello world", result.getContent());
+        verify(channelService).getOrCreateDefaultChannel();
         verify(chatMessageRepository, times(1)).save(any(ChatMessage.class));
     }
 

@@ -20,6 +20,9 @@ public class ChatMessage {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
+    @Column(nullable = true)
+    private Long channelId;
+
     public ChatMessage() {
         this.timestamp = LocalDateTime.now();
     }
@@ -27,6 +30,14 @@ public class ChatMessage {
     public ChatMessage(String username, String content) {
         this.username = username;
         this.content = content;
+        this.channelId = 1L; // Default to general channel for backwards compatibility
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public ChatMessage(String username, String content, Long channelId) {
+        this.username = username;
+        this.content = content;
+        this.channelId = channelId;
         this.timestamp = LocalDateTime.now();
     }
 
@@ -61,5 +72,13 @@ public class ChatMessage {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Long getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(Long channelId) {
+        this.channelId = channelId;
     }
 }

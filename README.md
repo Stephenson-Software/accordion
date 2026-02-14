@@ -4,7 +4,7 @@
 
 ## Overview
 
-Accord is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with a single chat room, username-based login, and real-time messaging.
+Accord is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, username-based login, and real-time messaging.
 
 **Technology Stack:**
 - **Backend**: Spring Boot 3.x, WebSocket (STOMP), H2 Database, Spring Data JPA
@@ -13,11 +13,12 @@ Accord is a Discord-like self-hosted chat application designed for simplicity an
 
 ## Features
 
-- ✅ Single chat room (global)
+- ✅ **Multiple chat rooms/channels** - Create and switch between different channels
+- ✅ Single chat room (global) - Backwards compatible default channel
 - ✅ Username-based login (no password required for MVP)
 - ✅ Real-time message broadcasting via WebSocket
 - ✅ Message persistence in H2 database
-- ✅ Message history on login
+- ✅ Message history on login (channel-specific)
 - ✅ Timestamp for each message
 - ✅ User join/leave notifications
 - ✅ **Browser-based web interface** (accessible from any device)
@@ -88,8 +89,10 @@ cd frontend && ./gradlew desktop:run
 1. Navigate to `http://localhost:3000`
 2. Enter your username (minimum 3 characters, alphanumeric + underscore)
 3. Click "Join Chat"
-4. Type your message and click "Send" or press Enter
-5. Open in multiple browser tabs to test real-time messaging
+4. **Select a channel from the sidebar** or create a new one with "+ New Channel"
+5. Type your message and click "Send" or press Enter
+6. **Switch between channels** by clicking on channel names in the sidebar
+7. Open in multiple browser tabs to test real-time messaging across channels
 
 **LibGDX Desktop Client:**
 1. **Frontend window will open** (800x600)
@@ -101,7 +104,12 @@ cd frontend && ./gradlew desktop:run
 **Backend API:**
 - Backend runs on `http://localhost:8080`
 - WebSocket endpoint: `ws://localhost:8080/ws`
-- REST API: `http://localhost:8080/api/users/login`, `http://localhost:8080/api/messages`
+- REST API endpoints:
+  - `GET /api/channels` - List all channels
+  - `POST /api/channels` - Create a new channel
+  - `GET /api/channels/{id}` - Get channel details
+  - `GET /api/messages?channelId={id}` - Get messages for a specific channel
+  - `POST /api/users/login` - User login
 
 ## Docker Deployment
 
@@ -306,13 +314,18 @@ To connect to a remote server, change `localhost` to your server's address.
 
 See [MVP.md](MVP.md) for the complete roadmap and architecture details.
 
+### Completed
+- ✅ Multiple chat rooms/channels - **NEW!**
+- ✅ Channel creation and management - **NEW!**
+- ✅ Channel-specific message history - **NEW!**
+
 ### Next Steps
-- Multiple chat rooms/channels
 - User authentication (password-based)
 - Private direct messages
 - User online/offline status
 - Message search and pagination
 - PostgreSQL/MySQL support for production
+- File/image sharing
 
 ## Documentation
 
