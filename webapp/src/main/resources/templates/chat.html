@@ -447,7 +447,7 @@
             
             // Set currentChannelId from loaded channels (prefer 'general', fallback to first channel)
             if (channels.length > 0) {
-                const generalChannel = channels.find(ch => ch.name === 'general');
+                const generalChannel = channels.find(ch => ch.name.toLowerCase() === 'general');
                 currentChannelId = generalChannel ? generalChannel.id : channels[0].id;
                 const currentChannel = channels.find(ch => ch.id === currentChannelId);
                 if (currentChannel) {
