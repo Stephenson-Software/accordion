@@ -70,7 +70,7 @@ class TimestampUtilsTest {
     }
 
     @Test
-    void testLocaleDateTimeNow() {
+    void testLocalDateTimeNow() {
         // Ensure LocalDateTime.now() works correctly
         LocalDateTime before = LocalDateTime.now();
         LocalDateTime after = LocalDateTime.now();

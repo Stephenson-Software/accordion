@@ -237,6 +237,7 @@ public class ChatScreen implements Screen {
             
             Label messageLabel = new Label(formattedMessage, skin);
             messageLabel.setWrap(true);
+            messageLabel.setAlignment(Align.left);
             messagesTable.add(messageLabel).fillX().expandX().padBottom(5);
             messagesTable.row();
             
