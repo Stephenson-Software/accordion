@@ -184,6 +184,48 @@
         .message-time {
             font-size: 0.85em;
             color: #999;
+            cursor: help;
+        }
+        
+        .message-time:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .date-separator {
+            text-align: center;
+            margin: 24px 0 16px 0;
+            position: relative;
+        }
+
+        .date-separator::before,
+        .date-separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+        }
+
+        .date-separator::before {
+            left: 0;
+        }
+
+        .date-separator::after {
+            right: 0;
+        }
+
+        .date-separator span {
+            background: white;
+            padding: 4px 16px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
         }
 
         .message-content {
@@ -431,6 +473,89 @@
         let currentSubscription = null; // Track current channel subscription
         let channels = []; // Store available channels
 
+        // Timestamp utilities
+        function getRelativeTime(timestamp) {
+            const now = new Date();
+            const messageDate = new Date(timestamp);
+            const diffMs = now - messageDate;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+
+            if (diffSec < 10) return 'Just now';
+            if (diffSec < 60) return `${diffSec} seconds ago`;
+            if (diffMin === 1) return '1 minute ago';
+            if (diffMin < 60) return `${diffMin} minutes ago`;
+            if (diffHour === 1) return '1 hour ago';
+            if (diffHour < 24) return `${diffHour} hours ago`;
+            if (diffDay === 1) return 'Yesterday';
+            if (diffDay < 7) return `${diffDay} days ago`;
+            
+            // For older messages, show date
+            return messageDate.toLocaleDateString(undefined, { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function getFullTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getDateSeparatorText(timestamp) {
+            const messageDate = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            // Reset time parts for comparison
+            const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+            if (messageDateOnly.getTime() === todayOnly.getTime()) {
+                return 'Today';
+            } else if (messageDateOnly.getTime() === yesterdayOnly.getTime()) {
+                return 'Yesterday';
+            } else {
+                return messageDate.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        function shouldShowDateSeparator(currentTimestamp, previousTimestamp) {
+            if (!previousTimestamp) return true;
+
+            const currentDate = new Date(currentTimestamp);
+            const previousDate = new Date(previousTimestamp);
+
+            return currentDate.toDateString() !== previousDate.toDateString();
+        }
+
+        // Update all relative timestamps
+        function updateRelativeTimestamps() {
+            document.querySelectorAll('.message-time[data-timestamp]').forEach(timeElement => {
+                const timestamp = timeElement.getAttribute('data-timestamp');
+                timeElement.textContent = getRelativeTime(timestamp);
+            });
+        }
+
+        // Start periodic update of relative times (every 30 seconds)
+        setInterval(updateRelativeTimestamps, 30000);
+
         function connect() {
             const socket = new SockJS(backendWsUrl);
             stompClient = Stomp.over(socket);
@@ -517,9 +642,13 @@
                 lastMessage.username === message.username && 
                 lastMessage.content === message.content) {
                 
-                // Find the last message div
-                const lastMessageDiv = messagesDiv.lastElementChild;
-                if (lastMessageDiv && lastMessageDiv.classList.contains('message')) {
+                // Find the last message div (skip date separators)
+                let lastMessageDiv = messagesDiv.lastElementChild;
+                while (lastMessageDiv && lastMessageDiv.classList.contains('date-separator')) {
+                    lastMessageDiv = lastMessageDiv.previousElementSibling;
+                }
+                
+                if (lastMessageDiv && lastMessageDiv.classList && lastMessageDiv.classList.contains('message')) {
                     // Increment count in our tracker (always starts at 1, so just increment)
                     lastMessage.count = lastMessage.count + 1;
                     
@@ -542,12 +671,9 @@
                     // Update the timestamp to show the latest occurrence
                     const timeSpan = lastMessageDiv.querySelector('.message-time');
                     if (timeSpan) {
-                        const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        });
-                        timeSpan.textContent = time;
+                        timeSpan.textContent = getRelativeTime(message.timestamp);
+                        timeSpan.setAttribute('data-timestamp', message.timestamp);
+                        timeSpan.setAttribute('title', getFullTimestamp(message.timestamp));
                     }
                     
                     // Scroll to bottom
@@ -556,24 +682,34 @@
                 }
             }
             
+            // Check if we need a date separator
+            const previousMessages = messagesDiv.querySelectorAll('.message');
+            const previousMessage = previousMessages.length > 0 ? previousMessages[previousMessages.length - 1] : null;
+            const previousTimestamp = previousMessage ? previousMessage.getAttribute('data-timestamp') : null;
+            
+            if (shouldShowDateSeparator(message.timestamp, previousTimestamp)) {
+                const dateSeparator = document.createElement('div');
+                dateSeparator.className = 'date-separator';
+                dateSeparator.innerHTML = `<span>${getDateSeparatorText(message.timestamp)}</span>`;
+                messagesDiv.appendChild(dateSeparator);
+            }
+            
             // Create new message div
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
+            messageDiv.setAttribute('data-timestamp', message.timestamp);
             
             if (message.username === 'System') {
                 messageDiv.classList.add('system');
             }
             
-            const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+            const relativeTime = getRelativeTime(message.timestamp);
+            const fullTimestamp = getFullTimestamp(message.timestamp);
             
             messageDiv.innerHTML = `
                 <div class="message-header">
                     <span class="message-username">${escapeHtml(message.username)}</span>
-                    <span class="message-time">${time}</span>
+                    <span class="message-time" data-timestamp="${message.timestamp}" title="${fullTimestamp}">${relativeTime}</span>
                 </div>
                 <div class="message-content">${escapeHtml(message.content)}</div>
             `;

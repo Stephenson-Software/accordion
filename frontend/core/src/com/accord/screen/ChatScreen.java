@@ -2,6 +2,7 @@ package com.accord.screen;
 
 import com.accord.AccordGame;
 import com.accord.config.AppConfig;
+import com.accord.util.TimeUtils;
 import com.accord.websocket.ChatWebSocketClient;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -18,7 +19,9 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class ChatScreen implements Screen {
@@ -34,7 +37,7 @@ public class ChatScreen implements Screen {
     private Table messagesTable;
     private Label statusLabel;
     private ChatWebSocketClient webSocketClient;
-    private List<String> messages;
+    private List<MessageEntry> messages;
     private static final int MAX_MESSAGES = 100;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     
@@ -42,6 +45,26 @@ public class ChatScreen implements Screen {
     private String lastMessageUsername = null;
     private String lastMessageContent = null;
     private int lastMessageCount = 1;
+    private LocalDateTime lastMessageTimestamp = null;
+    
+    // For periodic timestamp updates
+    private float timeSinceLastUpdate = 0f;
+    private static final float UPDATE_INTERVAL = 30f; // Update every 30 seconds
+
+    // Inner class to store message data
+    private static class MessageEntry {
+        String username;
+        String content;
+        LocalDateTime timestamp;
+        int count;
+        
+        MessageEntry(String username, String content, LocalDateTime timestamp, int count) {
+            this.username = username;
+            this.content = content;
+            this.timestamp = timestamp;
+            this.count = count;
+        }
+    }
 
     public ChatScreen(final AccordGame game, String username) {
         this.game = game;
@@ -148,19 +171,14 @@ public class ChatScreen implements Screen {
     }
 
     private void addMessage(String msgUsername, String content, String timestamp) {
-        // Format timestamp
-        String timeStr = "";
+        // Parse timestamp
+        LocalDateTime dt;
         try {
-            LocalDateTime dt = LocalDateTime.parse(timestamp);
-            timeStr = dt.format(TIME_FORMATTER);
+            dt = LocalDateTime.parse(timestamp);
         } catch (Exception e) {
             // If timestamp parsing fails, log and use current time
             LOGGER.warning("Failed to parse timestamp: " + timestamp + ", error: " + e.getMessage());
-            try {
-                timeStr = LocalDateTime.now().format(TIME_FORMATTER);
-            } catch (Exception ex) {
-                timeStr = "??:??:??";
-            }
+            dt = LocalDateTime.now();
         }
 
         // Check if this is a consecutive duplicate message (same user and same content)
@@ -172,47 +190,63 @@ public class ChatScreen implements Screen {
         if (isDuplicate && !messages.isEmpty()) {
             // Update the last message with incremented count
             lastMessageCount++;
-            // Note: Format is " (x2)" for LibGDX, while webapp uses a styled badge.
-            // This difference is intentional: LibGDX uses plain text labels,
-            // while webapp can style a separate DOM element with colors/backgrounds.
-            String countIndicator = " (x" + lastMessageCount + ")";
-            String updatedMessage = String.format("[%s] %s: %s%s", timeStr, msgUsername, content, countIndicator);
-            
-            // Replace the last message
-            messages.set(messages.size() - 1, updatedMessage);
+            MessageEntry lastEntry = messages.get(messages.size() - 1);
+            lastEntry.count = lastMessageCount;
+            lastEntry.timestamp = dt; // Update to latest timestamp
+            lastMessageTimestamp = dt;
         } else {
             // Add new message (not a duplicate, or different from last message)
-            String formattedMessage = String.format("[%s] %s: %s", timeStr, msgUsername, content);
-            messages.add(formattedMessage);
+            MessageEntry entry = new MessageEntry(msgUsername, content, dt, 1);
+            messages.add(entry);
             
-            // Update tracking variables to reference this newly added message
-            // Note: These track content/username, not list indices
+            // Update tracking variables
             lastMessageUsername = msgUsername;
             lastMessageContent = content;
             lastMessageCount = 1;
+            lastMessageTimestamp = dt;
             
             // Keep only last MAX_MESSAGES
             if (messages.size() > MAX_MESSAGES) {
-                // Remove the oldest message (index 0)
-                // This is safe: our tracking variables now point to the message we JUST added
-                // (which is at the end of the list), so removing the oldest doesn't affect tracking
                 messages.remove(0);
             }
         }
-
-        // Update UI
+        
+        // Refresh the display
+        refreshMessagesDisplay();
+    }
+    
+    private void refreshMessagesDisplay() {
         messagesTable.clear();
-        for (String msg : messages) {
-            Label msgLabel = new Label(msg, skin);
-            msgLabel.setWrap(true);
-            msgLabel.setAlignment(Align.left);
-            messagesTable.add(msgLabel).expandX().fillX().left().padBottom(5);
+        
+        LocalDateTime previousTimestamp = null;
+        
+        for (MessageEntry entry : messages) {
+            // Add date separator if needed
+            if (TimeUtils.shouldShowDateSeparator(entry.timestamp, previousTimestamp)) {
+                Label separatorLabel = new Label("--- " + TimeUtils.getDateSeparator(entry.timestamp) + " ---", skin);
+                separatorLabel.setColor(Color.GRAY);
+                separatorLabel.setAlignment(Align.center);
+                messagesTable.add(separatorLabel).fillX().padTop(10).padBottom(5);
+                messagesTable.row();
+            }
+            
+            // Format message with relative time
+            String relativeTime = TimeUtils.getRelativeTime(entry.timestamp);
+            String countIndicator = entry.count > 1 ? " (x" + entry.count + ")" : "";
+            String formattedMessage = String.format("[%s] %s: %s%s", relativeTime, entry.username, entry.content, countIndicator);
+            
+            Label messageLabel = new Label(formattedMessage, skin);
+            messageLabel.setWrap(true);
+            messageLabel.setAlignment(Align.left);
+            messagesTable.add(messageLabel).fillX().expandX().padBottom(5);
             messagesTable.row();
+            
+            previousTimestamp = entry.timestamp;
         }
         
         // Scroll to bottom
         scrollPane.layout();
-        scrollPane.setScrollPercentY(1f);
+        scrollPane.setScrollPercentY(1.0f);
     }
 
     private void sendMessage() {
@@ -243,6 +277,15 @@ public class ChatScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.15f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Update relative timestamps periodically
+        timeSinceLastUpdate += delta;
+        if (timeSinceLastUpdate >= UPDATE_INTERVAL) {
+            timeSinceLastUpdate = 0f;
+            if (!messages.isEmpty()) {
+                refreshMessagesDisplay();
+            }
+        }
 
         stage.act(delta);
         stage.draw();
