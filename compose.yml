@@ -21,6 +21,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
       
       # JPA configuration
+      # Note: 'validate' is recommended for production to prevent schema drift.
+      # For local development, override with 'update' or 'create-drop' in your .env file.
       - SPRING_JPA_DATABASE_PLATFORM=${SPRING_JPA_DATABASE_PLATFORM:-org.hibernate.dialect.H2Dialect}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       - SPRING_JPA_SHOW_SQL=${SPRING_JPA_SHOW_SQL:-false}

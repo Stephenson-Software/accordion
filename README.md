@@ -227,19 +227,25 @@ See `compose.yml` for all available environment variables.
 
 View the database contents:
 - URL: `http://localhost:8080/h2-console`
-- JDBC URL: When using Docker Compose with persistence (default): `jdbc:h2:file:/app/data/chatdb`
+- JDBC URL: When using Docker Compose with persistence (default): `jdbc:h2:file:/app/data/chatdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE`
 - JDBC URL: When using in-memory mode: `jdbc:h2:mem:chatdb`
 - Username: `sa`
 - Password: (leave empty)
+- Note: The JDBC URL (including parameters) should match your `SPRING_DATASOURCE_URL` environment variable.
 
 ### Database Persistence
 
-By default, the application uses **file-based H2 database with Docker volume persistence**. This means your chat messages and channels are preserved across container restarts.
+By default, **when running via Docker Compose**, the application uses a **file-based H2 database with Docker volume persistence**. This means your chat messages and channels are preserved across container restarts.
+
+**Note:** When running the backend directly from source (without Docker), it defaults to in-memory H2 as configured in `backend/src/main/resources/application.properties`.
 
 **Default Configuration (with Docker Compose):**
 - Database is stored in a Docker volume named `h2_data`
 - Data persists when containers are stopped and restarted
 - Database files are stored at `/app/data/chatdb` inside the container
+- Schema management uses `update` mode by default (convenient for development)
+  - **For production**: Consider using `validate` mode with proper database migrations (Flyway/Liquibase)
+  - Override in `.env`: `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`
 
 **To use in-memory database instead (data lost on restart):**
 
