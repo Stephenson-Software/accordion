@@ -17,7 +17,7 @@ Accord is a Discord-like self-hosted chat application designed for simplicity an
 - ✅ Single chat room (global) - Backwards compatible default channel
 - ✅ Username-based login (no password required for MVP)
 - ✅ Real-time message broadcasting via WebSocket
-- ✅ Message persistence in H2 database
+- ✅ **Message persistence in H2 database (survives container restarts)**
 - ✅ Message history on login (channel-specific)
 - ✅ Timestamp for each message
 - ✅ User join/leave notifications
@@ -227,9 +227,41 @@ See `compose.yml` for all available environment variables.
 
 View the database contents:
 - URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:chatdb`
+- JDBC URL: When using Docker Compose with persistence (default): `jdbc:h2:file:/app/data/chatdb`
+- JDBC URL: When using in-memory mode: `jdbc:h2:mem:chatdb`
 - Username: `sa`
 - Password: (leave empty)
+
+### Database Persistence
+
+By default, the application uses **file-based H2 database with Docker volume persistence**. This means your chat messages and channels are preserved across container restarts.
+
+**Default Configuration (with Docker Compose):**
+- Database is stored in a Docker volume named `h2_data`
+- Data persists when containers are stopped and restarted
+- Database files are stored at `/app/data/chatdb` inside the container
+
+**To use in-memory database instead (data lost on restart):**
+
+Edit your `.env` file:
+```bash
+SPRING_DATASOURCE_URL=jdbc:h2:mem:chatdb
+SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop
+```
+
+Then restart:
+```bash
+docker compose down && docker compose up -d
+```
+
+**To clear persisted data:**
+```bash
+# Stop containers and remove the volume
+docker compose down -v
+
+# Restart fresh
+docker compose up -d
+```
 
 ## Project Structure
 
