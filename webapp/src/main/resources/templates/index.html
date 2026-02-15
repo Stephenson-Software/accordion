@@ -185,8 +185,15 @@
                 });
                 
                 if (response.ok) {
-                    // Store username and redirect to chat
+                    const data = await response.json();
+                    // Store username, token and userId, then redirect to chat
                     sessionStorage.setItem('username', username);
+                    if (data.token) {
+                        sessionStorage.setItem('token', data.token);
+                    }
+                    if (data.userId) {
+                        sessionStorage.setItem('userId', data.userId);
+                    }
                     window.location.href = '/chat';
                 } else {
                     showError('Login failed. Please try again.');

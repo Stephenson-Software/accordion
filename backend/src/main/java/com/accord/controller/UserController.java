@@ -15,7 +15,10 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -102,5 +105,18 @@ public class UserController {
         }
         boolean exists = userService.userExists(username.trim());
         return ResponseEntity.ok(exists);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> listUsers() {
+        List<Map<String, Object>> users = userService.findAllUsers().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(users);
     }
 }
