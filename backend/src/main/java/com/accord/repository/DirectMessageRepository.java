@@ -3,6 +3,7 @@ package com.accord.repository;
 import com.accord.model.DirectMessage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,7 +21,9 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, Lo
                                          @Param("userId2") Long userId2,
                                          Pageable pageable);
 
-    List<DirectMessage> findByRecipientIdAndReadFalse(Long recipientId);
+    @Modifying
+    @Query("UPDATE DirectMessage dm SET dm.read = true WHERE dm.recipientId = :recipientId AND dm.senderId = :senderId AND dm.read = false")
+    int markConversationAsRead(@Param("recipientId") Long recipientId, @Param("senderId") Long senderId);
 
     @Query("SELECT COUNT(dm) FROM DirectMessage dm WHERE dm.recipientId = :recipientId AND dm.senderId = :senderId AND dm.read = false")
     long countUnreadFromSender(@Param("recipientId") Long recipientId, @Param("senderId") Long senderId);

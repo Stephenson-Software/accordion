@@ -583,10 +583,7 @@
                 displayDmMessage(message);
             } else {
                 // Update unread count for the sender
-                if (!unreadCounts[senderName]) {
-                    unreadCounts[senderName] = 0;
-                }
-                unreadCounts[senderName]++;
+                unreadCounts[senderName] = (unreadCounts[senderName] || 0) + 1;
                 displayUsers();
             }
         }

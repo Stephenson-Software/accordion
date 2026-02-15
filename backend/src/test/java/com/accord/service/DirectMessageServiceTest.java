@@ -106,20 +106,11 @@ class DirectMessageServiceTest {
 
     @Test
     void testMarkConversationAsRead() {
-        DirectMessage msg1 = new DirectMessage(1L, 2L, "Msg 1");
-        DirectMessage msg2 = new DirectMessage(1L, 2L, "Msg 2");
-        DirectMessage msg3 = new DirectMessage(3L, 2L, "From other user");
-
-        when(directMessageRepository.findByRecipientIdAndReadFalse(2L))
-                .thenReturn(Arrays.asList(msg1, msg2, msg3));
-        when(directMessageRepository.save(any(DirectMessage.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(directMessageRepository.markConversationAsRead(2L, 1L)).thenReturn(2);
 
         directMessageService.markConversationAsRead(2L, 1L);
 
-        assertTrue(msg1.isRead());
-        assertTrue(msg2.isRead());
-        assertFalse(msg3.isRead()); // From different sender, not marked
-        verify(directMessageRepository, times(2)).save(any(DirectMessage.class));
+        verify(directMessageRepository).markConversationAsRead(2L, 1L);
     }
 
     @Test

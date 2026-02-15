@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,14 +38,9 @@ public class DirectMessageService {
         });
     }
 
+    @Transactional
     public void markConversationAsRead(Long recipientId, Long senderId) {
-        List<DirectMessage> unreadMessages = directMessageRepository.findByRecipientIdAndReadFalse(recipientId);
-        for (DirectMessage message : unreadMessages) {
-            if (message.getSenderId().equals(senderId)) {
-                message.setRead(true);
-                directMessageRepository.save(message);
-            }
-        }
+        directMessageRepository.markConversationAsRead(recipientId, senderId);
     }
 
     public long getUnreadCount(Long recipientId) {
