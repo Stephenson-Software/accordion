@@ -48,4 +48,8 @@ public class UserService {
     public boolean verifyPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
+
+    public java.util.List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
 }

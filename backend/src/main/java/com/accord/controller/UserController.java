@@ -103,4 +103,17 @@ public class UserController {
         boolean exists = userService.userExists(username.trim());
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping
+    public ResponseEntity<?> listUsers() {
+        java.util.List<Map<String, Object>> users = userService.findAllUsers().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new java.util.HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    return userMap;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(users);
+    }
 }
