@@ -870,11 +870,11 @@
             if (typingUsernames.length === 0) {
                 typingDiv.innerHTML = '';
             } else if (typingUsernames.length === 1) {
-                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> is typing<span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> is typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
             } else if (typingUsernames.length === 2) {
-                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> and <strong>${escapeHtml(typingUsernames[1])}</strong> are typing<span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> and <strong>${escapeHtml(typingUsernames[1])}</strong> are typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
             } else {
-                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong>, <strong>${escapeHtml(typingUsernames[1])}</strong>, and ${typingUsernames.length - 2} others are typing<span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong>, <strong>${escapeHtml(typingUsernames[1])}</strong>, and ${typingUsernames.length - 2} others are typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
             }
         }
 
