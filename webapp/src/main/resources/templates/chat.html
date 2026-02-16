@@ -486,7 +486,7 @@
         let typingUsers = new Map(); // Map of username -> timeout ID for typing indicators
         let typingDebounceTimer = null; // Timer for debouncing typing events
         let isCurrentlyTyping = false; // Track if we've already sent a typing indicator
-        const TYPING_DEBOUNCE_MS = 1000; // Send typing event every 1 second while typing
+        const TYPING_DEBOUNCE_MS = 2000; // Send typing event every 2 seconds while typing
         const TYPING_TIMEOUT_MS = 3000; // Clear typing indicator after 3 seconds of inactivity
 
         function connect() {
@@ -729,6 +729,13 @@
             lastMessage = null;
             historyLoaded = false;
             messageQueue = [];
+            
+            // Reset current user's typing state and clear debounce timer
+            isCurrentlyTyping = false;
+            if (typingDebounceTimer) {
+                clearTimeout(typingDebounceTimer);
+                typingDebounceTimer = null;
+            }
             
             // Clear all typing indicator timeouts before clearing the map
             typingUsers.forEach(timeoutId => clearTimeout(timeoutId));

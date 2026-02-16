@@ -135,6 +135,20 @@ public class TypingIndicatorTest {
     }
 
     @Test
+    public void testUserTyping_WhitespaceOnlyUsername() {
+        // Arrange
+        Long channelId = 1L;
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("username", "   ");
+        payload.put("typing", true);
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            chatController.userTyping(channelId, payload);
+        });
+    }
+
+    @Test
     public void testUserTyping_ChannelNotFound() {
         // Arrange
         Long channelId = 999L;

@@ -149,8 +149,8 @@ public class ChatController {
         String username = (String) payload.get("username");
         Boolean typing = (Boolean) payload.get("typing");
         
-        if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException("Username is required");
+        if (!ValidationUtils.isValidUsername(username, minUsernameLength, maxUsernameLength)) {
+            throw new IllegalArgumentException("Invalid username");
         }
         
         if (typing == null) {
