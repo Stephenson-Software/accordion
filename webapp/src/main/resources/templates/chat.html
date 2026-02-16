@@ -899,6 +899,7 @@
                 // Set timer to send another typing event if still typing
                 // This keeps the indicator alive on the other end
                 typingDebounceTimer = setTimeout(() => {
+                    // Re-check input length in case user cleared it during the timeout
                     if (messageInput.value.trim().length > 0) {
                         sendTypingIndicator(true);
                     }
