@@ -466,9 +466,10 @@
         const backendWsUrl = /*[[${backendWsUrl}]]*/ 'http://localhost:8080/ws';
         const backendUrl = /*[[${backendUrl}]]*/ 'http://localhost:8080';
         
-        // Check if user is logged in
+        // Check if user is logged in with JWT token
         const username = sessionStorage.getItem('username');
-        if (!username) {
+        const jwtToken = sessionStorage.getItem('jwtToken');
+        if (!username || !jwtToken) {
             window.location.href = '/';
         }
 
@@ -493,7 +494,12 @@
             const socket = new SockJS(backendWsUrl);
             stompClient = Stomp.over(socket);
             
-            stompClient.connect({}, onConnected, onError);
+            // Include JWT token in STOMP connection headers
+            const headers = {
+                'Authorization': `Bearer ${jwtToken}`
+            };
+            
+            stompClient.connect(headers, onConnected, onError);
         }
 
         async function onConnected() {
@@ -659,7 +665,11 @@
 
         async function loadRecentMessages() {
             try {
-                const response = await fetch(`${backendUrl}/api/messages?limit=50&channelId=${currentChannelId}`);
+                const response = await fetch(`${backendUrl}/api/messages?limit=50&channelId=${currentChannelId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
                 if (response.ok) {
                     const messages = await response.json();
                     messages.forEach(message => displayMessage(message));
@@ -676,7 +686,11 @@
 
         async function loadChannels() {
             try {
-                const response = await fetch(`${backendUrl}/api/channels`);
+                const response = await fetch(`${backendUrl}/api/channels`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
                 if (response.ok) {
                     channels = await response.json();
                     displayChannels();
@@ -775,7 +789,8 @@
                 const response = await fetch(`${backendUrl}/api/channels`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken}`
                     },
                     body: JSON.stringify({
                         name: name,
@@ -821,6 +836,8 @@
                 stompClient.disconnect();
             }
             sessionStorage.removeItem('username');
+            sessionStorage.removeItem('jwtToken');
+            sessionStorage.removeItem('userId');
             window.location.href = '/';
         }
 
