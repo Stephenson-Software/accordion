@@ -1,6 +1,7 @@
 package com.accord.controller;
 
 import com.accord.model.ChatMessage;
+import com.accord.model.TypingIndicator;
 import com.accord.service.ChatService;
 import com.accord.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,6 +135,33 @@ public class ChatController {
         // Trim username before using in system message
         String trimmedUsername = username.trim();
         return chatService.saveMessage("System", trimmedUsername + " has joined the chat", channelId);
+    }
+
+    @MessageMapping("/chat.typing/{channelId}")
+    @SendTo("/topic/typing/{channelId}")
+    public TypingIndicator userTyping(@org.springframework.messaging.handler.annotation.DestinationVariable Long channelId,
+                                     Map<String, Object> payload) {
+        if (payload == null) {
+            throw new IllegalArgumentException("Payload must not be null");
+        }
+        
+        String username = (String) payload.get("username");
+        Boolean typing = (Boolean) payload.get("typing");
+        
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        
+        if (typing == null) {
+            typing = true; // Default to typing=true if not specified
+        }
+        
+        // Verify channel exists
+        if (!channelService.getChannelById(channelId).isPresent()) {
+            throw new IllegalArgumentException("Channel does not exist");
+        }
+        
+        return new TypingIndicator(username.trim(), channelId, typing);
     }
 }
 
