@@ -207,6 +207,39 @@
             text-align: center;
         }
 
+        .typing-indicator {
+            padding: 12px 20px;
+            color: #b9bbbe;
+            font-size: 0.9em;
+            font-style: italic;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .typing-indicator .dots {
+            display: inline-block;
+            margin-left: 4px;
+        }
+
+        .typing-indicator .dots span {
+            animation: blink 1.4s infinite both;
+            display: inline-block;
+        }
+
+        .typing-indicator .dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator .dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+
         .input-container {
             background: #2f3136;
             padding: 20px;
@@ -393,6 +426,8 @@
 
         <div class="messages-container" id="messages"></div>
 
+        <div class="typing-indicator" id="typingIndicator"></div>
+
         <div class="input-container">
             <form class="input-form" id="messageForm">
                 <input 
@@ -446,7 +481,13 @@
         let messageQueue = []; // Buffer for messages received during history loading
         let currentChannelId = null; // Will be set from loaded channels
         let currentSubscription = null; // Track current channel subscription
+        let typingSubscription = null; // Track typing indicator subscription
         let channels = []; // Store available channels
+        let typingUsers = new Map(); // Map of username -> timeout ID for typing indicators
+        let typingDebounceTimer = null; // Timer for debouncing typing events
+        let isCurrentlyTyping = false; // Track if we've already sent a typing indicator
+        const TYPING_DEBOUNCE_MS = 2000; // Send typing event every 2 seconds while typing
+        const TYPING_TIMEOUT_MS = 3000; // Clear typing indicator after 3 seconds of inactivity
 
         function connect() {
             const socket = new SockJS(backendWsUrl);
@@ -523,6 +564,16 @@
                 
                 stompClient.send(`/app/chat.send/${currentChannelId}`, {}, JSON.stringify(chatMessage));
                 messageInput.value = '';
+                
+                // Clear typing indicator when message is sent
+                sendTypingIndicator(false);
+                isCurrentlyTyping = false;
+                
+                // Clear any pending debounce timer
+                if (typingDebounceTimer) {
+                    clearTimeout(typingDebounceTimer);
+                    typingDebounceTimer = null;
+                }
             }
         }
 
@@ -656,9 +707,13 @@
             if (currentSubscription) {
                 currentSubscription.unsubscribe();
             }
+            if (typingSubscription) {
+                typingSubscription.unsubscribe();
+            }
             
-            // Subscribe to new channel
+            // Subscribe to new channel messages and typing indicators
             currentSubscription = stompClient.subscribe(`/topic/messages/${channelId}`, onMessageReceived);
+            typingSubscription = stompClient.subscribe(`/topic/typing/${channelId}`, onTypingReceived);
         }
 
         async function switchChannel(channelId, channelName) {
@@ -668,11 +723,23 @@
             currentChannelId = channelId;
             document.getElementById('currentChannelName').textContent = channelName;
             
-            // Clear messages
+            // Clear messages and typing indicators
             document.getElementById('messages').innerHTML = '';
+            document.getElementById('typingIndicator').innerHTML = '';
             lastMessage = null;
             historyLoaded = false;
             messageQueue = [];
+            
+            // Reset current user's typing state and clear debounce timer
+            isCurrentlyTyping = false;
+            if (typingDebounceTimer) {
+                clearTimeout(typingDebounceTimer);
+                typingDebounceTimer = null;
+            }
+            
+            // Clear all typing indicator timeouts before clearing the map
+            typingUsers.forEach(timeoutId => clearTimeout(timeoutId));
+            typingUsers.clear();
             
             // Subscribe to new channel
             subscribeToChannel(channelId);
@@ -763,9 +830,102 @@
             return div.innerHTML;
         }
 
+        function onTypingReceived(payload) {
+            const typingIndicator = JSON.parse(payload.body);
+            
+            // Don't show typing indicator for the current user
+            if (typingIndicator.username === username) {
+                return;
+            }
+            
+            if (typingIndicator.typing) {
+                // User started typing
+                // Clear any existing timeout for this user
+                if (typingUsers.has(typingIndicator.username)) {
+                    clearTimeout(typingUsers.get(typingIndicator.username));
+                }
+                
+                // Set a new timeout to clear this user's typing indicator
+                const timeoutId = setTimeout(() => {
+                    typingUsers.delete(typingIndicator.username);
+                    updateTypingDisplay();
+                }, TYPING_TIMEOUT_MS);
+                
+                typingUsers.set(typingIndicator.username, timeoutId);
+                updateTypingDisplay();
+            } else {
+                // User stopped typing
+                if (typingUsers.has(typingIndicator.username)) {
+                    clearTimeout(typingUsers.get(typingIndicator.username));
+                    typingUsers.delete(typingIndicator.username);
+                    updateTypingDisplay();
+                }
+            }
+        }
+
+        function updateTypingDisplay() {
+            const typingDiv = document.getElementById('typingIndicator');
+            const typingUsernames = Array.from(typingUsers.keys());
+            
+            if (typingUsernames.length === 0) {
+                typingDiv.innerHTML = '';
+            } else if (typingUsernames.length === 1) {
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> is typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+            } else if (typingUsernames.length === 2) {
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong> and <strong>${escapeHtml(typingUsernames[1])}</strong> are typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+            } else {
+                typingDiv.innerHTML = `<strong>${escapeHtml(typingUsernames[0])}</strong>, <strong>${escapeHtml(typingUsernames[1])}</strong>, and ${typingUsernames.length - 2} others are typing <span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+            }
+        }
+
+        function sendTypingIndicator(isTyping) {
+            if (stompClient && connected && currentChannelId) {
+                stompClient.send(`/app/chat.typing/${currentChannelId}`, {}, JSON.stringify({
+                    username: username,
+                    typing: isTyping
+                }));
+            }
+        }
+
+        function onMessageInputKeyup() {
+            const messageInput = document.getElementById('messageInput');
+            
+            // If input is not empty, send typing indicator
+            if (messageInput.value.trim().length > 0) {
+                // Send immediately if not already typing
+                if (!isCurrentlyTyping) {
+                    sendTypingIndicator(true);
+                    isCurrentlyTyping = true;
+                }
+                
+                // Clear existing debounce timer
+                if (typingDebounceTimer) {
+                    clearTimeout(typingDebounceTimer);
+                }
+                
+                // Set timer to send another typing event if still typing
+                // This keeps the indicator alive on the other end
+                typingDebounceTimer = setTimeout(() => {
+                    // Re-check input length in case user cleared it during the timeout
+                    if (messageInput.value.trim().length > 0) {
+                        sendTypingIndicator(true);
+                    }
+                }, TYPING_DEBOUNCE_MS);
+            } else {
+                // Input is empty, immediately clear typing indicator
+                sendTypingIndicator(false);
+                isCurrentlyTyping = false;
+                if (typingDebounceTimer) {
+                    clearTimeout(typingDebounceTimer);
+                    typingDebounceTimer = null;
+                }
+            }
+        }
+
         // Event listeners
         document.getElementById('messageForm').addEventListener('submit', sendMessage);
         document.getElementById('createChannelForm').addEventListener('submit', createChannel);
+        document.getElementById('messageInput').addEventListener('keyup', onMessageInputKeyup);
 
         // Connect on page load
         connect();
