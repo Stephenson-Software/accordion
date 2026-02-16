@@ -216,10 +216,14 @@
                 submitBtn.textContent = 'Login';
                 toggleText.textContent = "Don't have an account?";
                 toggleBtn.textContent = 'Register';
+                usernameInput.setAttribute('autocomplete', 'username');
+                passwordInput.setAttribute('autocomplete', 'current-password');
             } else {
                 submitBtn.textContent = 'Register';
                 toggleText.textContent = 'Already have an account?';
                 toggleBtn.textContent = 'Login';
+                usernameInput.setAttribute('autocomplete', 'off');
+                passwordInput.setAttribute('autocomplete', 'new-password');
             }
             clearErrors();
         });
@@ -312,6 +316,10 @@
         function showError(element, message) {
             element.textContent = message;
             element.classList.add('show');
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                element.classList.remove('show');
+            }, 5000);
         }
         
         function clearErrors() {

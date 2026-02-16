@@ -673,6 +673,9 @@
                 if (response.ok) {
                     const messages = await response.json();
                     messages.forEach(message => displayMessage(message));
+                } else if (response.status === 401 || response.status === 403) {
+                    // Token expired or invalid, redirect to login
+                    handleAuthError();
                 }
             } catch (error) {
                 console.error('Error loading messages:', error);
@@ -694,6 +697,9 @@
                 if (response.ok) {
                     channels = await response.json();
                     displayChannels();
+                } else if (response.status === 401 || response.status === 403) {
+                    // Token expired or invalid, redirect to login
+                    handleAuthError();
                 }
             } catch (error) {
                 console.error('Error loading channels:', error);
@@ -808,6 +814,9 @@
                     
                     // Switch to new channel
                     switchChannel(newChannel.id, newChannel.name);
+                } else if (response.status === 401 || response.status === 403) {
+                    // Token expired or invalid, redirect to login
+                    handleAuthError();
                 } else {
                     const error = await response.json();
                     alert(error.error || 'Failed to create channel');
@@ -816,6 +825,13 @@
                 console.error('Error creating channel:', error);
                 alert('Failed to create channel');
             }
+        }
+
+        function handleAuthError() {
+            // Clear session and redirect to login
+            sessionStorage.clear();
+            alert('Your session has expired. Please log in again.');
+            window.location.href = '/';
         }
 
         function updateStatus(isConnected) {
