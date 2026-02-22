@@ -1,10 +1,10 @@
-# accord-prototype
+# accordion-prototype
 
-**Accord Chat MVP** - A self-hosted real-time chat application with Spring Boot WebSocket backend and LibGDX frontend.
+**Accordion Chat MVP** - A self-hosted real-time chat application with Spring Boot WebSocket backend and LibGDX frontend.
 
 ## Overview
 
-Accord is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, username-based login, and real-time messaging.
+Accordion is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, username-based login, and real-time messaging.
 
 **Technology Stack:**
 - **Backend**: Spring Boot 3.x, WebSocket (STOMP), H2 Database, Spring Data JPA
@@ -171,40 +171,40 @@ The services will be available at:
 **Backend:**
 ```bash
 # Build the backend image
-docker build -t accord-backend:latest -f Dockerfile .
+docker build -t accordion-backend:latest -f Dockerfile .
 
 # Run the container
 docker run -d \
   -p 8080:8080 \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 **Web Application:**
 ```bash
 # Build the webapp image
-docker build -t accord-webapp:latest -f Dockerfile.webapp .
+docker build -t accordion-webapp:latest -f Dockerfile.webapp .
 
 # Run the container (requires backend to be running)
 docker run -d \
   -p 3000:3000 \
-  -e ACCORD_BACKEND_URL=http://backend:8080 \
-  -e ACCORD_BACKEND_WS_URL=ws://backend:8080/ws \
-  --link accord-backend:backend \
-  --name accord-webapp \
-  accord-webapp:latest
+  -e ACCORDION_BACKEND_URL=http://backend:8080 \
+  -e ACCORDION_BACKEND_WS_URL=ws://backend:8080/ws \
+  --link accordion-backend:backend \
+  --name accordion-webapp \
+  accordion-webapp:latest
 ```
 
 **View logs:**
 ```bash
-docker logs -f accord-backend
-docker logs -f accord-webapp
+docker logs -f accordion-backend
+docker logs -f accordion-webapp
 ```
 
 **Stop and remove:**
 ```bash
-docker stop accord-backend accord-webapp
-docker rm accord-backend
+docker stop accordion-backend accordion-webapp
+docker rm accordion-backend
 ```
 
 ### Environment Variables
@@ -217,8 +217,8 @@ docker run -d \
   -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com" \
   -e APP_USERNAME_MIN_LENGTH=5 \
   -e APP_MESSAGE_MAX_LENGTH=500 \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 See `compose.yml` for all available environment variables.
@@ -272,7 +272,7 @@ docker compose up -d
 ## Project Structure
 
 ```
-accord-prototype/
+accordion-prototype/
 ├── MVP.md                          # Detailed MVP documentation
 ├── README.md                       # This file
 ├── Dockerfile                      # Docker image for backend
@@ -281,8 +281,8 @@ accord-prototype/
 ├── .dockerignore                   # Docker build exclusions
 ├── backend/                        # Spring Boot backend
 │   ├── pom.xml                    # Maven configuration
-│   └── src/main/java/com/accord/
-│       ├── AccordApplication.java
+│   └── src/main/java/com/accordion/
+│       ├── AccordionApplication.java
 │       ├── config/                # WebSocket configuration
 │       ├── controller/            # REST and WebSocket controllers
 │       ├── model/                 # JPA entities
@@ -292,8 +292,8 @@ accord-prototype/
 ├── webapp/                         # Spring Boot web application
 │   ├── pom.xml                    # Maven configuration
 │   └── src/main/
-│       ├── java/com/accord/webapp/
-│       │   ├── AccordWebApplication.java
+│       ├── java/com/accordion/webapp/
+│       │   ├── AccordionWebApplication.java
 │       │   └── controller/        # Web controllers
 │       └── resources/
 │           ├── templates/         # Thymeleaf HTML templates
@@ -303,13 +303,13 @@ accord-prototype/
 └── frontend/                       # LibGDX frontend (desktop)
     ├── build.gradle               # Root Gradle config
     ├── core/                      # Shared code
-    │   └── src/com/accord/
-    │       ├── AccordGame.java
+    │   └── src/com/accordion/
+    │       ├── AccordionGame.java
     │       ├── config/            # Configuration
     │       ├── screen/            # Login & Chat screens
     │       └── websocket/         # WebSocket client
     └── desktop/                   # Desktop launcher
-        └── src/com/accord/desktop/
+        └── src/com/accordion/desktop/
             └── DesktopLauncher.java
 ```
 
