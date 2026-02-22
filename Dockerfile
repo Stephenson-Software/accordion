@@ -1,4 +1,4 @@
-# Dockerfile for Accord Chat Backend
+# Dockerfile for Accordion Chat Backend
 # Multi-stage build for smaller image size
 
 # Stage 1: Build

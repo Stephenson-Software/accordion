@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide covers deploying the Accord Chat application (backend and web application) using Docker and Docker Compose.
+This guide covers deploying the Accordion Chat application (backend and web application) using Docker and Docker Compose.
 
 ## Quick Start
 
@@ -68,13 +68,13 @@ nano .env  # or use your preferred editor
 **Important**: The webapp uses TWO sets of backend URLs:
 
 1. **Server-side URLs** (webapp server → backend server, internal Docker network):
-   - `ACCORD_BACKEND_URL`: Backend API base URL (default: `http://backend:8080`)
-   - `ACCORD_BACKEND_WS_URL`: Backend WebSocket URL (default: `http://backend:8080/ws`)
+   - `ACCORDION_BACKEND_URL`: Backend API base URL (default: `http://backend:8080`)
+   - `ACCORDION_BACKEND_WS_URL`: Backend WebSocket URL (default: `http://backend:8080/ws`)
    - Uses Docker service name `backend` for internal communication
 
 2. **Client-side URLs** (browser → backend server, must be publicly accessible):
-   - `ACCORD_BACKEND_CLIENT_URL`: Backend API base URL for browser (default: `http://localhost:8080`)
-   - `ACCORD_BACKEND_CLIENT_WS_URL`: Backend WebSocket URL for browser (default: `http://localhost:8080/ws`)
+   - `ACCORDION_BACKEND_CLIENT_URL`: Backend API base URL for browser (default: `http://localhost:8080`)
+   - `ACCORDION_BACKEND_CLIENT_WS_URL`: Backend WebSocket URL for browser (default: `http://localhost:8080/ws`)
    - **Must use `localhost` or your public domain** - browsers cannot resolve Docker service names
 
 ### Example: Custom Ports
@@ -89,12 +89,12 @@ WEBAPP_PORT=4000            # Host port for webapp
 WEBAPP_SERVER_PORT=4000     # Container port for webapp
 
 # Server-side backend URLs (webapp server → backend, internal Docker network)
-ACCORD_BACKEND_URL=http://backend:9090
-ACCORD_BACKEND_WS_URL=http://backend:9090/ws
+ACCORDION_BACKEND_URL=http://backend:9090
+ACCORDION_BACKEND_WS_URL=http://backend:9090/ws
 
 # Client-side backend URLs (browser → backend, must use localhost or public domain)
-ACCORD_BACKEND_CLIENT_URL=http://localhost:9090
-ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
+ACCORDION_BACKEND_CLIENT_URL=http://localhost:9090
+ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
 ```
 
 **Important Notes:**
@@ -129,7 +129,7 @@ The `compose.yml` file provides a complete configuration for running both servic
 ### Building the Image
 
 ```bash
-docker build -t accord-backend:latest .
+docker build -t accordion-backend:latest .
 ```
 
 ### Running the Container
@@ -137,31 +137,31 @@ docker build -t accord-backend:latest .
 ```bash
 docker run -d \
   -p 8080:8080 \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### Viewing Logs
 
 ```bash
 # Follow logs
-docker logs -f accord-backend
+docker logs -f accordion-backend
 
 # View last 100 lines
-docker logs --tail 100 accord-backend
+docker logs --tail 100 accordion-backend
 ```
 
 ### Stopping and Removing
 
 ```bash
 # Stop the container
-docker stop accord-backend
+docker stop accordion-backend
 
 # Remove the container
-docker rm accord-backend
+docker rm accordion-backend
 
 # Remove the image
-docker rmi accord-backend:latest
+docker rmi accordion-backend:latest
 ```
 
 ## Environment Variables
@@ -174,8 +174,8 @@ Configure the application using environment variables:
 docker run -d \
   -p 8080:8080 \
   -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com,https://app.yourdomain.com" \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### Validation Configuration
@@ -186,8 +186,8 @@ docker run -d \
   -e APP_USERNAME_MIN_LENGTH=5 \
   -e APP_USERNAME_MAX_LENGTH=30 \
   -e APP_MESSAGE_MAX_LENGTH=500 \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### All Available Environment Variables
@@ -209,7 +209,7 @@ The container includes automatic health checks that ping the `/api/messages` end
 Check health status:
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' accord-backend
+docker inspect --format='{{.State.Health.Status}}' accordion-backend
 ```
 
 ## Production Deployment
@@ -248,8 +248,8 @@ For production, replace H2 with PostgreSQL or MySQL:
 services:
   backend:
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/accorddb
-      - SPRING_DATASOURCE_USERNAME=accord
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/accordiondb
+      - SPRING_DATASOURCE_USERNAME=accordion
       - SPRING_DATASOURCE_PASSWORD=secure_password
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
@@ -258,8 +258,8 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=accorddb
-      - POSTGRES_USER=accord
+      - POSTGRES_DB=accordiondb
+      - POSTGRES_USER=accordion
       - POSTGRES_PASSWORD=secure_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -276,23 +276,23 @@ When running the frontend on the host machine and backend in Docker:
 
 ```bash
 # Frontend connects to backend
-./gradlew desktop:run -Daccord.websocket.url=ws://localhost:8080/ws
+./gradlew desktop:run -Daccordion.websocket.url=ws://localhost:8080/ws
 ```
 
 ### Running Multiple Services
 
-The compose configuration uses a bridge network (`accord-network`) that allows for future service expansion:
+The compose configuration uses a bridge network (`accordion-network`) that allows for future service expansion:
 
 ```yaml
 services:
   backend:
     networks:
-      - accord-network
+      - accordion-network
   
   # Add more services here
   # frontend-web:
   #   networks:
-  #     - accord-network
+  #     - accordion-network
 ```
 
 ## Troubleshooting
@@ -308,13 +308,13 @@ If the web application shows "Could not connect to server" errors:
 1. **Check your `.env` file has BOTH URL sets**:
    ```bash
    # Server-side URLs (webapp server → backend, internal Docker network)
-   ACCORD_BACKEND_URL=http://backend:8080
-   ACCORD_BACKEND_WS_URL=http://backend:8080/ws
+   ACCORDION_BACKEND_URL=http://backend:8080
+   ACCORDION_BACKEND_WS_URL=http://backend:8080/ws
    
    # Client-side URLs (browser → backend, must use localhost or public domain)
    DOCKER_HOST_IP=localhost
-   ACCORD_BACKEND_CLIENT_URL=http://localhost:8080
-   ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://localhost:8080
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws
    ```
 
 2. **If using custom ports**, update the client URLs:
@@ -323,15 +323,15 @@ If the web application shows "Could not connect to server" errors:
    BACKEND_PORT=9090
    SERVER_PORT=9090
    DOCKER_HOST_IP=localhost
-   ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:9090
-   ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:9090/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:9090
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:9090/ws
    ```
 
 3. **For production with a public domain**:
    ```bash
    DOCKER_HOST_IP=yourdomain.com
-   ACCORD_BACKEND_CLIENT_URL=https://${DOCKER_HOST_IP}
-   ACCORD_BACKEND_CLIENT_WS_URL=https://${DOCKER_HOST_IP}/ws
+   ACCORDION_BACKEND_CLIENT_URL=https://${DOCKER_HOST_IP}
+   ACCORDION_BACKEND_CLIENT_WS_URL=https://${DOCKER_HOST_IP}/ws
    ```
 
 4. **Rebuild and restart**:
@@ -361,8 +361,8 @@ To access the web application from other devices on your local network (e.g., ph
    ```bash
    DOCKER_HOST_IP=192.168.1.100
    # URLs will automatically resolve using the DOCKER_HOST_IP variable:
-   # ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:8080
-   # ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:8080/ws
+   # ACCORDION_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:8080
+   # ACCORDION_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:8080/ws
    ```
 
 3. **Update CORS to allow network access**:
@@ -398,10 +398,10 @@ If you change ports and the backend service hangs or the health check fails:
    ```bash
    # In .env file
    SERVER_PORT=9090
-   ACCORD_BACKEND_URL=http://backend:9090
-   ACCORD_BACKEND_WS_URL=http://backend:9090/ws
-   ACCORD_BACKEND_CLIENT_URL=http://localhost:9090
-   ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
+   ACCORDION_BACKEND_URL=http://backend:9090
+   ACCORDION_BACKEND_WS_URL=http://backend:9090/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://localhost:9090
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
    ```
 
 2. **Use matching internal/external ports for simplicity**:
@@ -472,8 +472,8 @@ For development, mount the source code as a volume:
 docker run -d \
   -p 8080:8080 \
   -v $(pwd)/backend/src:/app/src \
-  --name accord-backend-dev \
-  accord-backend:latest
+  --name accordion-backend-dev \
+  accordion-backend:latest
 ```
 
 ### Debugging
@@ -485,8 +485,8 @@ docker run -d \
   -p 8080:8080 \
   -p 5005:5005 \
   -e JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005" \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 Connect your IDE debugger to `localhost:5005`.
@@ -505,12 +505,12 @@ The Dockerfile uses multi-stage builds to create a minimal runtime image:
 
 ```yaml
 - name: Build Docker Image
-  run: docker build -t accord-backend:${{ github.sha }} .
+  run: docker build -t accordion-backend:${{ github.sha }} .
 
 - name: Push to Registry
   run: |
-    docker tag accord-backend:${{ github.sha }} ghcr.io/username/accord-backend:latest
-    docker push ghcr.io/username/accord-backend:latest
+    docker tag accordion-backend:${{ github.sha }} ghcr.io/username/accordion-backend:latest
+    docker push ghcr.io/username/accordion-backend:latest
 ```
 
 ## Additional Resources

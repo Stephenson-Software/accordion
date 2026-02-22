@@ -8,7 +8,7 @@ java {
 sourceSets.main.java.srcDirs = [ "src/" ]
 sourceSets.main.resources.srcDirs = [ "src/" ]
 
-project.ext.mainClassName = "com.accord.desktop.DesktopLauncher"
+project.ext.mainClassName = "com.accordion.desktop.DesktopLauncher"
 project.ext.assetsDir = new File("../core/assets")
 
 tasks.register('run', JavaExec) {
