@@ -1,7 +1,7 @@
-package com.accord.security;
+package com.accordion.security;
 
-import com.accord.model.User;
-import com.accord.repository.UserRepository;
+import com.accordion.model.User;
+import com.accordion.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

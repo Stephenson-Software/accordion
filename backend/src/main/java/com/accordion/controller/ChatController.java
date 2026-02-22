@@ -1,7 +1,7 @@
 package com.accordion.controller;
 
 import com.accordion.model.ChatMessage;
-import com.accord.model.TypingIndicator;
+import com.accordion.model.TypingIndicator;
 import com.accordion.service.ChatService;
 import com.accordion.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
