@@ -1,4 +1,4 @@
-# Accord Chat Development Tickets
+# Accordion Chat Development Tickets
 
 This document breaks down the development roadmap from [MVP.md](MVP.md) into actionable tickets. Each ticket represents a specific feature or improvement that can be tracked and implemented.
 

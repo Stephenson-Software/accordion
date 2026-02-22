@@ -6,12 +6,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${BACKEND_CONTAINER_NAME:-accord-backend}
+    container_name: ${BACKEND_CONTAINER_NAME:-accordion-backend}
     ports:
       - "${BACKEND_PORT:-8080}:${SERVER_PORT:-8080}"
     environment:
       # Application configuration
-      - SPRING_APPLICATION_NAME=${SPRING_APPLICATION_NAME:-accord-chat}
+      - SPRING_APPLICATION_NAME=${SPRING_APPLICATION_NAME:-accordion-chat}
       - SERVER_PORT=${SERVER_PORT:-8080}
       
       # Database configuration (H2 file-based with Docker volume)
@@ -51,7 +51,7 @@ services:
       start_period: 40s
     
     networks:
-      - accord-network
+      - accordion-network
     
     restart: unless-stopped
 
@@ -60,18 +60,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.webapp
-    container_name: ${WEBAPP_CONTAINER_NAME:-accord-webapp}
+    container_name: ${WEBAPP_CONTAINER_NAME:-accordion-webapp}
     ports:
       - "${WEBAPP_PORT:-3000}:${WEBAPP_SERVER_PORT:-3000}"
     environment:
       # Application configuration
-      - SPRING_APPLICATION_NAME=${WEBAPP_SPRING_APPLICATION_NAME:-accord-webapp}
+      - SPRING_APPLICATION_NAME=${WEBAPP_SPRING_APPLICATION_NAME:-accordion-webapp}
       - SERVER_PORT=${WEBAPP_SERVER_PORT:-3000}
       
       # Backend configuration (server-side, internal Docker network)
       # Use service name for internal communication
-      - ACCORD_BACKEND_URL=${ACCORD_BACKEND_URL:-http://backend:8080}
-      - ACCORD_BACKEND_WS_URL=${ACCORD_BACKEND_WS_URL:-http://backend:8080/ws}
+      - ACCORDION_BACKEND_URL=${ACCORDION_BACKEND_URL:-http://backend:8080}
+      - ACCORDION_BACKEND_WS_URL=${ACCORDION_BACKEND_WS_URL:-http://backend:8080/ws}
       
       # Backend configuration (client-side, browser access)
       # Must be accessible from the user's browser
@@ -80,8 +80,8 @@ services:
       # For network access: your machine's IP (e.g., 192.168.1.100)
       # For production: your public domain
       - DOCKER_HOST_IP=${DOCKER_HOST_IP:-localhost}
-      - ACCORD_BACKEND_CLIENT_URL=${ACCORD_BACKEND_CLIENT_URL:-http://localhost:8080}
-      - ACCORD_BACKEND_CLIENT_WS_URL=${ACCORD_BACKEND_CLIENT_WS_URL:-http://localhost:8080/ws}
+      - ACCORDION_BACKEND_CLIENT_URL=${ACCORDION_BACKEND_CLIENT_URL:-http://localhost:8080}
+      - ACCORDION_BACKEND_CLIENT_WS_URL=${ACCORDION_BACKEND_CLIENT_WS_URL:-http://localhost:8080/ws}
     
     depends_on:
       backend:
@@ -95,12 +95,12 @@ services:
       start_period: 40s
     
     networks:
-      - accord-network
+      - accordion-network
     
     restart: unless-stopped
 
 networks:
-  accord-network:
+  accordion-network:
     driver: bridge
 
 volumes:
