@@ -30,6 +30,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         
+        // Note: SecurityContextHolder cleanup is handled by Spring Security's filter chain.
+        // We should NOT call SecurityContextHolder.clearContext() in a finally block here,
+        // as it would clear the context before subsequent filters execute, breaking authentication.
+        // Spring Security automatically clears the context after the request is complete.
+        
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username = null;
@@ -45,13 +50,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authenticationToken = 
-                    new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
+                    UsernamePasswordAuthenticationToken authenticationToken = 
+                        new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            } catch (Exception e) {
+                // Authentication failed - log and continue without setting authentication
+                // This will result in 401/403 for protected endpoints instead of 500
+                logger.warn("Authentication failed for user '{}': {}", username, e.getMessage());
             }
         }
         chain.doFilter(request, response);

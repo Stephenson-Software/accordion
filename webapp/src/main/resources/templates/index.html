@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2f3136;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -21,16 +21,16 @@
         }
 
         .container {
-            background: white;
+            background: #36393f;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
             padding: 40px;
             width: 90%;
             max-width: 400px;
         }
 
         h1 {
-            color: #667eea;
+            color: #3b82f6;
             text-align: center;
             margin-bottom: 10px;
             font-size: 2.5em;
@@ -38,7 +38,7 @@
 
         .subtitle {
             text-align: center;
-            color: #666;
+            color: #b9bbbe;
             margin-bottom: 30px;
             font-size: 0.9em;
         }
@@ -50,40 +50,50 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: #dcddde;
             font-weight: 500;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #202225;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
+            background: #40444b;
+            color: #dcddde;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #72767d;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3b82f6;
         }
 
         button {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            background: #1d4ed8;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         }
 
         button:active {
@@ -91,7 +101,7 @@
         }
 
         .error {
-            color: #e74c3c;
+            color: #ed4245;
             font-size: 0.9em;
             margin-top: 8px;
             display: none;
@@ -102,13 +112,34 @@
         }
 
         .info {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
+            background: #2f3136;
+            border-left: 4px solid #3b82f6;
             padding: 12px;
             margin-top: 20px;
             border-radius: 4px;
             font-size: 0.85em;
-            color: #555;
+            color: #b9bbbe;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 20px;
+            color: #b9bbbe;
+        }
+
+        .toggle-form button {
+            background: transparent;
+            color: #3b82f6;
+            padding: 0;
+            margin-top: 10px;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .toggle-form button:hover {
+            transform: none;
+            box-shadow: none;
+            color: #60a5fa;
         }
     </style>
 </head>
@@ -117,7 +148,7 @@
         <h1>Accord</h1>
         <div class="subtitle">Real-time Chat Application</div>
 
-        <form id="loginForm">
+        <form id="authForm">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input 
@@ -129,18 +160,36 @@
                     maxlength="50"
                     pattern="[A-Za-z0-9_]+"
                     required
-                    autocomplete="off">
+                    autocomplete="username">
                 <div class="error" id="usernameError"></div>
             </div>
 
-            <button type="submit">Join Chat</button>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    minlength="8"
+                    required
+                    autocomplete="current-password">
+                <div class="error" id="passwordError"></div>
+            </div>
+
+            <button type="submit" id="submitBtn">Login</button>
         </form>
 
+        <div class="toggle-form">
+            <span id="toggleText">Don't have an account?</span>
+            <button type="button" id="toggleBtn">Register</button>
+        </div>
+
         <div class="info">
-            <strong>Username requirements:</strong>
+            <strong>Requirements:</strong>
             <ul style="margin-left: 20px; margin-top: 8px;">
-                <li>3-50 characters</li>
-                <li>Letters, numbers, and underscores only</li>
+                <li><strong>Username:</strong> 3-50 characters (letters, numbers, underscores)</li>
+                <li><strong>Password:</strong> Min 8 characters with uppercase, lowercase, and digit</li>
             </ul>
         </div>
     </div>
@@ -149,39 +198,95 @@
         /*<![CDATA[*/
         const backendUrl = /*[[${backendUrl}]]*/ 'http://localhost:8080';
         
-        const form = document.getElementById('loginForm');
+        const form = document.getElementById('authForm');
         const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
         const usernameError = document.getElementById('usernameError');
+        const passwordError = document.getElementById('passwordError');
+        const submitBtn = document.getElementById('submitBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const toggleText = document.getElementById('toggleText');
+
+        let isLoginMode = true;
+
+        // Toggle between login and register mode
+        toggleBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                submitBtn.textContent = 'Login';
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = 'Register';
+                usernameInput.setAttribute('autocomplete', 'username');
+                passwordInput.setAttribute('autocomplete', 'current-password');
+            } else {
+                submitBtn.textContent = 'Register';
+                toggleText.textContent = 'Already have an account?';
+                toggleBtn.textContent = 'Login';
+                usernameInput.setAttribute('autocomplete', 'off');
+                passwordInput.setAttribute('autocomplete', 'new-password');
+            }
+            clearErrors();
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+            clearErrors();
+
             const username = usernameInput.value.trim();
-            
+            const password = passwordInput.value;
+
             // Validate username
             if (username.length < 3) {
-                showError('Username must be at least 3 characters');
+                showError(usernameError, 'Username must be at least 3 characters');
                 return;
             }
             
             if (username.length > 50) {
-                showError('Username must be 50 characters or less');
+                showError(usernameError, 'Username must be 50 characters or less');
                 return;
             }
             
             if (!/^[A-Za-z0-9_]+$/.test(username)) {
-                showError('Username can only contain letters, numbers, and underscores');
+                showError(usernameError, 'Username can only contain letters, numbers, and underscores');
                 return;
             }
             
-            // Attempt login
+            // Validate password
+            if (password.length < 8) {
+                showError(passwordError, 'Password must be at least 8 characters');
+                return;
+            }
+
+            if (!/[A-Z]/.test(password)) {
+                showError(passwordError, 'Password must contain at least one uppercase letter');
+                return;
+            }
+
+            if (!/[a-z]/.test(password)) {
+                showError(passwordError, 'Password must contain at least one lowercase letter');
+                return;
+            }
+
+            if (!/[0-9]/.test(password)) {
+                showError(passwordError, 'Password must contain at least one digit');
+                return;
+            }
+
+            // Disable button during request
+            submitBtn.disabled = true;
+            submitBtn.textContent = isLoginMode ? 'Logging in...' : 'Registering...';
+
             try {
-                const response = await fetch(`${backendUrl}/api/users/login`, {
+                const endpoint = isLoginMode ? '/api/users/login' : '/api/users/register';
+                const response = await fetch(`${backendUrl}${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username: username })
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
                 });
                 
                 if (response.ok) {
@@ -196,20 +301,50 @@
                     }
                     window.location.href = '/chat';
                 } else {
-                    showError('Login failed. Please try again.');
+                    // Handle error responses - check if response is JSON
+                    let errorMessage = isLoginMode ? 'Login failed' : 'Registration failed';
+                    const contentType = response.headers.get('content-type') || '';
+
+                    if (contentType.includes('application/json')) {
+                        try {
+                            const errorData = await response.json();
+                            if (errorData && errorData.error) {
+                                errorMessage = errorData.error;
+                            }
+                        } catch (parseError) {
+                            // JSON parsing failed, fall back to statusText if available
+                        }
+                    }
+
+                    // Use statusText as fallback if available
+                    if (response.statusText && errorMessage === (isLoginMode ? 'Login failed' : 'Registration failed')) {
+                        errorMessage = response.statusText;
+                    }
+
+                    showError(passwordError, errorMessage);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = isLoginMode ? 'Login' : 'Register';
                 }
             } catch (error) {
-                console.error('Login error:', error);
-                showError('Could not connect to server. Please try again.');
+                console.error('Authentication error:', error);
+                showError(passwordError, 'Could not connect to server. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = isLoginMode ? 'Login' : 'Register';
             }
         });
 
-        function showError(message) {
-            usernameError.textContent = message;
-            usernameError.classList.add('show');
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.add('show');
+            // Auto-hide error after 5 seconds
             setTimeout(() => {
-                usernameError.classList.remove('show');
+                element.classList.remove('show');
             }, 5000);
+        }
+
+        function clearErrors() {
+            usernameError.classList.remove('show');
+            passwordError.classList.remove('show');
         }
         /*]]>*/
     </script>

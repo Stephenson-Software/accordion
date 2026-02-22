@@ -1,6 +1,5 @@
 package com.accord.controller;
 
-import com.accord.dto.AuthResponse;
 import com.accord.dto.LoginRequest;
 import com.accord.dto.RegisterRequest;
 import com.accord.model.User;

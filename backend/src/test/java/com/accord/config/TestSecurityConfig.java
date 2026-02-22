@@ -1,6 +1,5 @@
 package com.accord.config;
 
-import com.accord.security.JwtAuthenticationFilter;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;

@@ -21,6 +21,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         
+        // Handle users with null password (from migration phase)
+        if (user.getPassword() == null) {
+            throw new UsernameNotFoundException("Password not configured for account: " + username + ". Please contact support or re-register.");
+        }
+        
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),

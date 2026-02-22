@@ -24,6 +24,9 @@ RUN apk add --no-cache wget
 # Create a non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 
+# Create data directory for H2 database with proper ownership
+RUN mkdir -p /app/data && chown -R spring:spring /app/data
+
 # Copy the built artifact from build stage
 COPY --from=build /app/target/*.jar app.jar
 

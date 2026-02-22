@@ -29,27 +29,40 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
+        if (accessor == null) {
+            return message;
+        }
+
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authToken = accessor.getFirstNativeHeader("Authorization");
             
-            if (authToken != null && authToken.startsWith("Bearer ")) {
-                String token = authToken.substring(7);
-                try {
-                    String username = jwtUtil.extractUsername(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    
-                    if (jwtUtil.validateToken(token, userDetails.getUsername())) {
-                        UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        accessor.setUser(authentication);
-                    }
-                } catch (Exception e) {
-                    // Authentication failed - connection will proceed but subsequent operations will be unauthorized
-                    // This allows the connection to be established, and authorization is checked per-message
-                    logger.warn("Failed to authenticate WebSocket connection: {}", e.getMessage());
+            if (authToken == null || !authToken.startsWith("Bearer ")) {
+                logger.warn("WebSocket CONNECT rejected: missing or invalid Authorization header");
+                // Reject unauthenticated CONNECT by returning null
+                return null;
+            }
+
+            String token = authToken.substring(7);
+            try {
+                String username = jwtUtil.extractUsername(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                
+                if (!jwtUtil.validateToken(token, userDetails.getUsername())) {
+                    logger.warn("WebSocket CONNECT rejected: JWT validation failed for user '{}'", username);
+                    return null;
                 }
+
+                UsernamePasswordAuthenticationToken authentication = 
+                    new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                accessor.setUser(authentication);
+                
+                logger.debug("WebSocket CONNECT authenticated for user '{}'", username);
+            } catch (Exception e) {
+                // Authentication failed - reject the WebSocket connection
+                logger.warn("WebSocket CONNECT rejected: Authentication failed - {}", e.getMessage());
+                return null;
             }
         }
         
