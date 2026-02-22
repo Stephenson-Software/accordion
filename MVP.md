@@ -1,4 +1,4 @@
-# Accord Chat MVP
+# Accordion Chat MVP
 
 ## Overview
 A self-hosted real-time chat application with a Spring Boot WebSocket backend and LibGDX frontend. This MVP demonstrates core chat functionality with a single chat room.
@@ -161,24 +161,24 @@ app.username.min-length=3
 ### Frontend Configuration
 - **WebSocket endpoint**: Configurable via `AppConfig.getWebSocketUrl()`
   - Default: `ws://localhost:8080/ws`
-  - Override with system property: `-Daccord.websocket.url=ws://yourserver.com:8080/ws`
+  - Override with system property: `-Daccordion.websocket.url=ws://yourserver.com:8080/ws`
 - **Window size**: 800x600
-- **Title**: "Accord Chat"
+- **Title**: "Accordion Chat"
 - **Username constraints**: 3-50 characters, alphanumeric and underscore only
 - **Message length**: Maximum 1000 characters
 
 ## Project Structure
 
 ```
-accord-prototype/
+accordion-prototype/
 ├── MVP.md                          # This file
 ├── README.md                       # Project overview
 ├── backend/                        # Spring Boot backend
 │   ├── pom.xml                    # Maven configuration
 │   └── src/
 │       └── main/
-│           ├── java/com/accord/
-│           │   ├── AccordApplication.java
+│           ├── java/com/accordion/
+│           │   ├── AccordionApplication.java
 │           │   ├── config/
 │           │   │   └── WebSocketConfig.java
 │           │   ├── controller/
@@ -199,15 +199,15 @@ accord-prototype/
     ├── build.gradle               # Root Gradle config
     ├── settings.gradle
     ├── core/                      # Shared code
-    │   └── src/com/accord/
-    │       ├── AccordGame.java
+    │   └── src/com/accordion/
+    │       ├── AccordionGame.java
     │       ├── screen/
     │       │   ├── LoginScreen.java
     │       │   └── ChatScreen.java
     │       └── websocket/
     │           └── WebSocketClient.java
     └── desktop/                   # Desktop launcher
-        └── src/com/accord/desktop/
+        └── src/com/accordion/desktop/
             └── DesktopLauncher.java
 ```
 
