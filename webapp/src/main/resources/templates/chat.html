@@ -533,9 +533,22 @@
         const TYPING_TIMEOUT_MS = 3000; // Clear typing indicator after 3 seconds of inactivity
 
         // Timestamp utilities
+
+        // Parse a timestamp string as UTC. The server sends LocalDateTime without timezone info,
+        // so we append 'Z' to ensure JavaScript interprets the value as UTC rather than local time.
+        function parseTimestamp(timestamp) {
+            if (!timestamp) return new Date(NaN);
+            const str = String(timestamp);
+            // Already has timezone info (Z or +/-offset)
+            if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
+                return new Date(str);
+            }
+            return new Date(str + 'Z');
+        }
+
         function getRelativeTime(timestamp) {
             const now = new Date();
-            const messageDate = new Date(timestamp);
+            const messageDate = parseTimestamp(timestamp);
             const diffMs = now - messageDate;
             const diffSec = Math.floor(diffMs / 1000);
             const diffMin = Math.floor(diffSec / 60);
@@ -560,7 +573,7 @@
         }
 
         function getFullTimestamp(timestamp) {
-            const date = new Date(timestamp);
+            const date = parseTimestamp(timestamp);
             return date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: 'long',
@@ -572,7 +585,7 @@
         }
 
         function getDateSeparatorText(timestamp) {
-            const messageDate = new Date(timestamp);
+            const messageDate = parseTimestamp(timestamp);
             const today = new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
@@ -598,8 +611,8 @@
         function shouldShowDateSeparator(currentTimestamp, previousTimestamp) {
             if (!previousTimestamp) return true;
 
-            const currentDate = new Date(currentTimestamp);
-            const previousDate = new Date(previousTimestamp);
+            const currentDate = parseTimestamp(currentTimestamp);
+            const previousDate = parseTimestamp(previousTimestamp);
 
             return currentDate.toDateString() !== previousDate.toDateString();
         }

@@ -79,4 +79,30 @@ class TimestampUtilsTest {
         assertFalse(after.isBefore(before), 
             "Later timestamp should not be before earlier timestamp");
     }
+
+    @Test
+    void testIso8601FormatLacksTimezone() {
+        // Verify that LocalDateTime.toString() produces ISO-8601 without timezone suffix.
+        // This is why JavaScript must treat the value as UTC (by appending 'Z').
+        LocalDateTime dt = LocalDateTime.of(2026, 2, 15, 10, 0, 0);
+        String serialized = dt.toString();
+        assertFalse(serialized.endsWith("Z"),
+            "LocalDateTime serialization should not include a timezone suffix");
+        assertFalse(serialized.contains("+"),
+            "LocalDateTime serialization should not include a UTC offset");
+        assertTrue(serialized.startsWith("2026-02-15T10:00"),
+            "LocalDateTime serialization should use ISO-8601 date-time format");
+    }
+
+    @Test
+    void testTimestampSubtraction_SameZoneGivesCorrectDiff() {
+        // Simulate the server producing a timestamp 5 minutes ago, and the
+        // client computing the diff without timezone confusion.
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime fiveMinutesAgo = now.minusMinutes(5);
+
+        long diffSeconds = java.time.Duration.between(fiveMinutesAgo, now).getSeconds();
+        assertEquals(300, diffSeconds,
+            "Difference between now and 5 minutes ago should be 300 seconds");
+    }
 }
