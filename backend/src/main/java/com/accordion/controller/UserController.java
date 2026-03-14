@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -103,11 +104,11 @@ public class UserController {
         }
         
         try {
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username.trim(), password)
             );
             
-            User user = userService.findByUsername(username.trim())
+            User user = userService.findByUsername(authentication.getName())
                     .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
             
             String token = jwtUtil.generateToken(user.getUsername());

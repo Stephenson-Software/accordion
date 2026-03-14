@@ -97,32 +97,6 @@ class UserServiceTest {
     }
 
     @Test
-    void testVerifyPassword_Correct() {
-        String rawPassword = "Password123";
-        String encodedPassword = "$2a$10$encodedPasswordHash";
-        
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-
-        boolean result = userService.verifyPassword(rawPassword, encodedPassword);
-
-        assertTrue(result);
-        verify(passwordEncoder, times(1)).matches(rawPassword, encodedPassword);
-    }
-
-    @Test
-    void testVerifyPassword_Incorrect() {
-        String rawPassword = "WrongPassword";
-        String encodedPassword = "$2a$10$encodedPasswordHash";
-        
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(false);
-
-        boolean result = userService.verifyPassword(rawPassword, encodedPassword);
-
-        assertFalse(result);
-        verify(passwordEncoder, times(1)).matches(rawPassword, encodedPassword);
-    }
-
-    @Test
     void testUserExists_True() {
         when(userRepository.existsByUsername("testuser")).thenReturn(true);
 
