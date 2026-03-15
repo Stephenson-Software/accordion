@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -125,9 +126,11 @@ class UserControllerTest {
     @Test
     void testLogin_Success() throws Exception {
         LoginRequest request = new LoginRequest("testuser", "Password1");
-        
+
+        Authentication mockAuthentication = mock(Authentication.class);
+        when(mockAuthentication.getName()).thenReturn("testuser");
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(null);
+                .thenReturn(mockAuthentication);
         when(userService.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtUtil.generateToken("testuser")).thenReturn("test.jwt.token");
 
