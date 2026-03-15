@@ -222,8 +222,13 @@ public class ApiClient {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
+            boolean first = true;
             while ((line = reader.readLine()) != null) {
+                if (!first) {
+                    sb.append('\n');
+                }
                 sb.append(line);
+                first = false;
             }
             return sb.toString();
         }

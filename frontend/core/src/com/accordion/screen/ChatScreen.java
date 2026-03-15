@@ -272,7 +272,11 @@ public class ChatScreen implements Screen {
                 List<ApiClient.MessageInfo> history = game.apiClient.getMessages(channelId, 50);
                 Gdx.app.postRunnable(() -> {
                     // Only apply if still on the same channel
-                    if (channelId != currentChannelId) return;
+                    if (channelId != currentChannelId) {
+                        LOGGER.fine("Discarding message history for channel " + channelId 
+                            + " (current channel is " + currentChannelId + ")");
+                        return;
+                    }
                     
                     for (ApiClient.MessageInfo msg : history) {
                         addMessage(msg.username, msg.content, msg.timestamp);

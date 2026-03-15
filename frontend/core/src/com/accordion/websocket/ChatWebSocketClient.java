@@ -136,7 +136,10 @@ public class ChatWebSocketClient extends WebSocketClient {
         try {
             // Parse STOMP headers to determine destination
             String[] parts = stompMessage.split("\n\n", 2);
-            if (parts.length <= 1) return;
+            if (parts.length <= 1) {
+                LOGGER.warning("Malformed STOMP message: missing payload separator");
+                return;
+            }
             
             String headers = parts[0];
             String jsonPayload = parts[1].replace("\0", "");
