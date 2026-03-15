@@ -82,7 +82,7 @@ public class ApiClient {
         try {
             JsonArray array = gson.fromJson(responseStr, JsonArray.class);
             if (array == null) {
-                throw new ApiException("Invalid response from server: empty channel list", 0);
+                throw new ApiException("Invalid server response: failed to parse channel list", 0);
             }
             List<ChannelInfo> channels = new ArrayList<>();
             for (int i = 0; i < array.size(); i++) {
@@ -125,7 +125,7 @@ public class ApiClient {
         try {
             JsonArray array = gson.fromJson(responseStr, JsonArray.class);
             if (array == null) {
-                throw new ApiException("Invalid response from server: empty message list", 0);
+                throw new ApiException("Invalid server response: failed to parse message list", 0);
             }
             List<MessageInfo> messages = new ArrayList<>();
             for (int i = 0; i < array.size(); i++) {
