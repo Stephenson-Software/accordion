@@ -2,14 +2,23 @@ package com.accordion.screen;
 
 import com.accordion.AccordionGame;
 import com.accordion.config.AppConfig;
+import com.accordion.service.ApiClient;
 import com.accordion.websocket.ChatWebSocketClient;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -18,7 +27,11 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChatScreen implements Screen {
@@ -33,6 +46,10 @@ public class ChatScreen implements Screen {
     private ScrollPane scrollPane;
     private Table messagesTable;
     private Label statusLabel;
+    private Label channelNameLabel;
+    private Label typingLabel;
+    private Table channelListTable;
+    private ScrollPane channelScrollPane;
     private ChatWebSocketClient webSocketClient;
     private List<String> messages;
     private static final int MAX_MESSAGES = 100;
@@ -42,6 +59,16 @@ public class ChatScreen implements Screen {
     private String lastMessageUsername = null;
     private String lastMessageContent = null;
     private int lastMessageCount = 1;
+    
+    // Channel management
+    private List<ApiClient.ChannelInfo> channels = new ArrayList<>();
+    private long currentChannelId = -1;
+    private String currentChannelName = "";
+    
+    // Typing indicator tracking
+    private final Map<String, Long> typingUsers = new HashMap<>();
+    private boolean isCurrentlyTyping = false;
+    private long lastTypingSentTime = 0;
 
     public ChatScreen(final AccordionGame game, String username) {
         this.game = game;
@@ -56,17 +83,65 @@ public class ChatScreen implements Screen {
 
         skin = new Skin(Gdx.files.internal("uiskin.json"));
 
-        // Main table
+        // Main table with sidebar layout
         Table mainTable = new Table();
         mainTable.setFillParent(true);
         stage.addActor(mainTable);
 
-        // Header
-        Label titleLabel = new Label("Accordion Chat - " + username, skin);
-        titleLabel.setFontScale(1.5f);
+        // === LEFT SIDEBAR: Channel list ===
+        Table sidebarTable = new Table();
+        sidebarTable.top();
+        
+        Label channelsHeader = new Label("Channels", skin);
+        channelsHeader.setFontScale(1.2f);
+        sidebarTable.add(channelsHeader).expandX().left().padLeft(5).padTop(5).padBottom(5);
+        sidebarTable.row();
+        
+        // Channel list (scrollable)
+        channelListTable = new Table();
+        channelListTable.top().left();
+        channelScrollPane = new ScrollPane(channelListTable, skin);
+        channelScrollPane.setFadeScrollBars(false);
+        channelScrollPane.setScrollingDisabled(true, false);
+        sidebarTable.add(channelScrollPane).expand().fill().pad(2);
+        sidebarTable.row();
+        
+        // New Channel button
+        TextButton newChannelButton = new TextButton("+ New Channel", skin);
+        newChannelButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                showCreateChannelDialog();
+            }
+        });
+        sidebarTable.add(newChannelButton).fillX().pad(5);
+        sidebarTable.row();
+        
+        // Logout button
+        TextButton logoutButton = new TextButton("Logout", skin);
+        logoutButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                handleLogout();
+            }
+        });
+        sidebarTable.add(logoutButton).fillX().pad(5).padBottom(5);
+
+        // === RIGHT SIDE: Chat area ===
+        Table chatTable = new Table();
+        
+        // Header row
+        Table headerTable = new Table();
+        channelNameLabel = new Label("# general", skin);
+        channelNameLabel.setFontScale(1.3f);
+        headerTable.add(channelNameLabel).expandX().left().padLeft(10);
         
         statusLabel = new Label("Connecting...", skin);
         statusLabel.setColor(Color.YELLOW);
+        headerTable.add(statusLabel).right().padRight(10);
+        
+        chatTable.add(headerTable).fillX().padTop(5);
+        chatTable.row();
 
         // Messages area
         messagesTable = new Table();
@@ -74,11 +149,28 @@ public class ChatScreen implements Screen {
         scrollPane = new ScrollPane(messagesTable, skin);
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(true, false);
+        chatTable.add(scrollPane).expand().fill().pad(5);
+        chatTable.row();
+        
+        // Typing indicator
+        typingLabel = new Label("", skin);
+        typingLabel.setColor(Color.LIGHT_GRAY);
+        chatTable.add(typingLabel).fillX().left().padLeft(10).height(20);
+        chatTable.row();
 
         // Input area
         messageField = new TextField("", skin);
         messageField.setMessageText("Type your message...");
         messageField.setMaxLength(AppConfig.MAX_MESSAGE_LENGTH);
+        
+        // Typing indicator on key input
+        messageField.addListener(new InputListener() {
+            @Override
+            public boolean keyTyped(InputEvent event, char character) {
+                onMessageInputChanged();
+                return false;
+            }
+        });
         
         sendButton = new TextButton("Send", skin);
         sendButton.addListener(new ChangeListener() {
@@ -88,21 +180,200 @@ public class ChatScreen implements Screen {
             }
         });
 
-        // Layout
-        mainTable.add(titleLabel).expandX().left().padLeft(10).padTop(10);
-        mainTable.add(statusLabel).right().padRight(10).padTop(10);
-        mainTable.row();
-        mainTable.add(scrollPane).colspan(2).expand().fill().pad(10);
-        mainTable.row();
-        
         Table inputTable = new Table();
-        inputTable.add(messageField).expandX().fillX().padRight(10);
-        inputTable.add(sendButton).width(100);
-        
-        mainTable.add(inputTable).colspan(2).fillX().pad(10);
+        inputTable.add(messageField).expandX().fillX().padRight(5);
+        inputTable.add(sendButton).width(80);
+        chatTable.add(inputTable).fillX().pad(5);
 
-        // Connect to WebSocket
+        // Assemble main layout: sidebar | chat
+        mainTable.add(sidebarTable).width(180).fillY().padRight(2);
+        mainTable.add(chatTable).expand().fill();
+
+        // Load channels and connect WebSocket
+        loadChannels();
         connectWebSocket();
+    }
+
+    private void loadChannels() {
+        new Thread(() -> {
+            try {
+                List<ApiClient.ChannelInfo> loadedChannels = game.apiClient.getChannels();
+                Gdx.app.postRunnable(() -> {
+                    channels = loadedChannels;
+                    displayChannels();
+                    
+                    // Auto-select first channel if none selected
+                    if (currentChannelId == -1 && !channels.isEmpty()) {
+                        switchChannel(channels.get(0).id, channels.get(0).name);
+                    }
+                });
+            } catch (ApiClient.ApiException e) {
+                LOGGER.log(Level.WARNING, "Failed to load channels", e);
+                Gdx.app.postRunnable(() -> {
+                    addMessage("System", "Failed to load channels: " + e.getMessage(),
+                              LocalDateTime.now().toString());
+                });
+            }
+        }).start();
+    }
+
+    private void displayChannels() {
+        channelListTable.clear();
+        for (final ApiClient.ChannelInfo channel : channels) {
+            TextButton channelBtn = new TextButton("# " + channel.name, skin);
+            if (channel.id == currentChannelId) {
+                channelBtn.setColor(Color.CYAN);
+            }
+            channelBtn.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    switchChannel(channel.id, channel.name);
+                }
+            });
+            channelListTable.add(channelBtn).fillX().padBottom(2);
+            channelListTable.row();
+        }
+    }
+
+    private void switchChannel(long channelId, String channelName) {
+        if (channelId == currentChannelId) return;
+        
+        currentChannelId = channelId;
+        currentChannelName = channelName;
+        channelNameLabel.setText("# " + channelName);
+        
+        // Clear messages and typing state
+        messages.clear();
+        lastMessageUsername = null;
+        lastMessageContent = null;
+        lastMessageCount = 1;
+        typingUsers.clear();
+        updateTypingDisplay();
+        isCurrentlyTyping = false;
+        
+        // Update channel list highlighting
+        displayChannels();
+        
+        // Subscribe to new channel via WebSocket
+        if (webSocketClient != null && webSocketClient.isConnected()) {
+            webSocketClient.subscribeToChannel(channelId);
+        }
+        
+        // Load message history
+        loadMessageHistory(channelId);
+        
+        // Refresh messages UI
+        refreshMessagesUI();
+    }
+
+    private void loadMessageHistory(long channelId) {
+        new Thread(() -> {
+            try {
+                List<ApiClient.MessageInfo> history = game.apiClient.getMessages(channelId, 50);
+                Gdx.app.postRunnable(() -> {
+                    // Only apply if still on the same channel
+                    if (channelId != currentChannelId) return;
+                    
+                    for (ApiClient.MessageInfo msg : history) {
+                        addMessage(msg.username, msg.content, msg.timestamp);
+                    }
+                });
+            } catch (ApiClient.ApiException e) {
+                LOGGER.log(Level.WARNING, "Failed to load message history", e);
+            }
+        }).start();
+    }
+
+    private void showCreateChannelDialog() {
+        final Dialog dialog = new Dialog("Create Channel", skin);
+        
+        final TextField nameField = new TextField("", skin);
+        nameField.setMessageText("Channel name");
+        
+        final TextField descField = new TextField("", skin);
+        descField.setMessageText("Description (optional)");
+        
+        final Label dialogError = new Label("", skin);
+        dialogError.setColor(Color.RED);
+        dialogError.setWrap(true);
+        
+        dialog.getContentTable().add(new Label("Name:", skin)).padRight(5);
+        dialog.getContentTable().add(nameField).width(250);
+        dialog.getContentTable().row().padTop(5);
+        dialog.getContentTable().add(new Label("Description:", skin)).padRight(5);
+        dialog.getContentTable().add(descField).width(250);
+        dialog.getContentTable().row().padTop(5);
+        dialog.getContentTable().add(dialogError).colspan(2).width(300);
+        
+        TextButton createBtn = new TextButton("Create", skin);
+        TextButton cancelBtn = new TextButton("Cancel", skin);
+        
+        createBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String name = nameField.getText().trim();
+                String description = descField.getText().trim();
+                
+                if (name.length() < AppConfig.MIN_CHANNEL_NAME_LENGTH || 
+                    name.length() > AppConfig.MAX_CHANNEL_NAME_LENGTH) {
+                    dialogError.setText("Name must be " + AppConfig.MIN_CHANNEL_NAME_LENGTH + 
+                        "-" + AppConfig.MAX_CHANNEL_NAME_LENGTH + " characters");
+                    return;
+                }
+                if (!name.matches(AppConfig.CHANNEL_NAME_PATTERN)) {
+                    dialogError.setText("Name: letters, numbers, hyphens, underscores only");
+                    return;
+                }
+                if (description.length() > AppConfig.MAX_CHANNEL_DESCRIPTION_LENGTH) {
+                    dialogError.setText("Description too long (max " + 
+                        AppConfig.MAX_CHANNEL_DESCRIPTION_LENGTH + ")");
+                    return;
+                }
+                
+                createBtn.setDisabled(true);
+                createChannel(name, description, dialog);
+            }
+        });
+        
+        cancelBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dialog.hide();
+            }
+        });
+        
+        dialog.button(createBtn);
+        dialog.button(cancelBtn);
+        dialog.show(stage);
+    }
+
+    private void createChannel(final String name, final String description, final Dialog dialog) {
+        new Thread(() -> {
+            try {
+                ApiClient.ChannelInfo newChannel = game.apiClient.createChannel(name, description, username);
+                Gdx.app.postRunnable(() -> {
+                    dialog.hide();
+                    loadChannels();
+                    switchChannel(newChannel.id, newChannel.name);
+                });
+            } catch (ApiClient.ApiException e) {
+                LOGGER.log(Level.WARNING, "Failed to create channel", e);
+                Gdx.app.postRunnable(() -> {
+                    addMessage("System", "Failed to create channel: " + e.getMessage(),
+                              LocalDateTime.now().toString());
+                    dialog.hide();
+                });
+            }
+        }).start();
+    }
+
+    private void handleLogout() {
+        if (webSocketClient != null) {
+            webSocketClient.close();
+        }
+        game.apiClient.setJwtToken(null);
+        game.username = null;
+        game.setScreen(new LoginScreen(game));
     }
 
     private void connectWebSocket() {
@@ -113,6 +384,7 @@ public class ChatScreen implements Screen {
             URI uri = new URI(wsUrl);
             webSocketClient = new ChatWebSocketClient(uri);
             webSocketClient.setUsername(username);
+            webSocketClient.setJwtToken(game.apiClient.getJwtToken());
             
             webSocketClient.addMessageListener(new ChatWebSocketClient.MessageListener() {
                 @Override
@@ -126,10 +398,28 @@ public class ChatScreen implements Screen {
                         if (connected) {
                             statusLabel.setText("Connected");
                             statusLabel.setColor(Color.GREEN);
+                            // Subscribe to current channel once connected
+                            if (currentChannelId != -1) {
+                                webSocketClient.subscribeToChannel(currentChannelId);
+                            }
                         } else {
                             statusLabel.setText("Disconnected");
                             statusLabel.setColor(Color.RED);
                         }
+                    });
+                }
+            });
+            
+            webSocketClient.addTypingListener(new ChatWebSocketClient.TypingListener() {
+                @Override
+                public void onTypingIndicator(String typingUsername, boolean typing) {
+                    Gdx.app.postRunnable(() -> {
+                        if (typing) {
+                            typingUsers.put(typingUsername, System.currentTimeMillis());
+                        } else {
+                            typingUsers.remove(typingUsername);
+                        }
+                        updateTypingDisplay();
                     });
                 }
             });
@@ -145,6 +435,46 @@ public class ChatScreen implements Screen {
                           LocalDateTime.now().toString());
             });
         }
+    }
+
+    private void onMessageInputChanged() {
+        String text = messageField.getText().trim();
+        long now = System.currentTimeMillis();
+        
+        if (!text.isEmpty()) {
+            if (!isCurrentlyTyping || (now - lastTypingSentTime > AppConfig.TYPING_DEBOUNCE_MS)) {
+                isCurrentlyTyping = true;
+                lastTypingSentTime = now;
+                if (webSocketClient != null && webSocketClient.isConnected()) {
+                    webSocketClient.sendTypingIndicator(true);
+                }
+            }
+        } else {
+            if (isCurrentlyTyping) {
+                isCurrentlyTyping = false;
+                if (webSocketClient != null && webSocketClient.isConnected()) {
+                    webSocketClient.sendTypingIndicator(false);
+                }
+            }
+        }
+    }
+
+    private void updateTypingDisplay() {
+        if (typingUsers.isEmpty()) {
+            typingLabel.setText("");
+            return;
+        }
+        
+        List<String> names = new ArrayList<>(typingUsers.keySet());
+        StringBuilder sb = new StringBuilder();
+        if (names.size() == 1) {
+            sb.append(names.get(0)).append(" is typing...");
+        } else if (names.size() == 2) {
+            sb.append(names.get(0)).append(" and ").append(names.get(1)).append(" are typing...");
+        } else {
+            sb.append(names.size()).append(" people are typing...");
+        }
+        typingLabel.setText(sb.toString());
     }
 
     private void addMessage(String msgUsername, String content, String timestamp) {
@@ -200,7 +530,10 @@ public class ChatScreen implements Screen {
             }
         }
 
-        // Update UI
+        refreshMessagesUI();
+    }
+
+    private void refreshMessagesUI() {
         messagesTable.clear();
         for (String msg : messages) {
             Label msgLabel = new Label(msg, skin);
@@ -231,6 +564,10 @@ public class ChatScreen implements Screen {
         if (webSocketClient != null && webSocketClient.isConnected()) {
             webSocketClient.sendChatMessage(message);
             messageField.setText("");
+            
+            // Clear typing indicator when message sent
+            isCurrentlyTyping = false;
+            webSocketClient.sendTypingIndicator(false);
         } else {
             statusLabel.setText("Not connected");
             statusLabel.setColor(Color.RED);
@@ -243,6 +580,21 @@ public class ChatScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.15f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        
+        // Expire typing indicators after timeout
+        long now = System.currentTimeMillis();
+        boolean changed = false;
+        Iterator<Map.Entry<String, Long>> it = typingUsers.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Long> entry = it.next();
+            if (now - entry.getValue() > AppConfig.TYPING_TIMEOUT_MS) {
+                it.remove();
+                changed = true;
+            }
+        }
+        if (changed) {
+            updateTypingDisplay();
+        }
 
         stage.act(delta);
         stage.draw();
