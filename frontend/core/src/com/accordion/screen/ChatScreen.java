@@ -63,7 +63,9 @@ public class ChatScreen implements Screen {
     // Channel management
     private List<ApiClient.ChannelInfo> channels = new ArrayList<>();
     private long currentChannelId = -1;
-    private String currentChannelName = "";
+    
+    // Lifecycle guard for background threads
+    private volatile boolean disposed = false;
     
     // Typing indicator tracking
     private final Map<String, Long> typingUsers = new HashMap<>();
@@ -199,6 +201,7 @@ public class ChatScreen implements Screen {
             try {
                 List<ApiClient.ChannelInfo> loadedChannels = game.apiClient.getChannels();
                 Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
                     channels = loadedChannels;
                     displayChannels();
                     
@@ -207,9 +210,10 @@ public class ChatScreen implements Screen {
                         switchChannel(channels.get(0).id, channels.get(0).name);
                     }
                 });
-            } catch (ApiClient.ApiException e) {
+            } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to load channels", e);
                 Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
                     addMessage("System", "Failed to load channels: " + e.getMessage(),
                               LocalDateTime.now().toString());
                 });
@@ -239,7 +243,6 @@ public class ChatScreen implements Screen {
         if (channelId == currentChannelId) return;
         
         currentChannelId = channelId;
-        currentChannelName = channelName;
         channelNameLabel.setText("# " + channelName);
         
         // Clear messages and typing state
@@ -271,6 +274,7 @@ public class ChatScreen implements Screen {
             try {
                 List<ApiClient.MessageInfo> history = game.apiClient.getMessages(channelId, 50);
                 Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
                     // Only apply if still on the same channel
                     if (channelId != currentChannelId) {
                         LOGGER.fine("Discarding message history for channel " + channelId 
@@ -278,12 +282,19 @@ public class ChatScreen implements Screen {
                         return;
                     }
                     
+                    // Batch insert all history messages without refreshing UI each time
                     for (ApiClient.MessageInfo msg : history) {
-                        addMessage(msg.username, msg.content, msg.timestamp);
+                        addMessageToList(msg.username, msg.content, msg.timestamp);
                     }
+                    refreshMessagesUI();
                 });
-            } catch (ApiClient.ApiException e) {
+            } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to load message history", e);
+                Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
+                    addMessage("System", "Failed to load message history: " + e.getMessage(),
+                              LocalDateTime.now().toString());
+                });
             }
         }).start();
     }
@@ -356,13 +367,15 @@ public class ChatScreen implements Screen {
             try {
                 ApiClient.ChannelInfo newChannel = game.apiClient.createChannel(name, description, username);
                 Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
                     dialog.hide();
                     loadChannels();
                     switchChannel(newChannel.id, newChannel.name);
                 });
-            } catch (ApiClient.ApiException e) {
+            } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to create channel", e);
                 Gdx.app.postRunnable(() -> {
+                    if (disposed) return;
                     addMessage("System", "Failed to create channel: " + e.getMessage(),
                               LocalDateTime.now().toString());
                     dialog.hide();
@@ -481,14 +494,17 @@ public class ChatScreen implements Screen {
         typingLabel.setText(sb.toString());
     }
 
-    private void addMessage(String msgUsername, String content, String timestamp) {
+    /**
+     * Add a message to the internal list without refreshing the UI.
+     * Used for batch operations like loading message history.
+     */
+    private void addMessageToList(String msgUsername, String content, String timestamp) {
         // Format timestamp
         String timeStr = "";
         try {
             LocalDateTime dt = LocalDateTime.parse(timestamp);
             timeStr = dt.format(TIME_FORMATTER);
         } catch (Exception e) {
-            // If timestamp parsing fails, log and use current time
             LOGGER.warning("Failed to parse timestamp: " + timestamp + ", error: " + e.getMessage());
             try {
                 timeStr = LocalDateTime.now().format(TIME_FORMATTER);
@@ -504,36 +520,25 @@ public class ChatScreen implements Screen {
                               lastMessageContent.equals(content);
         
         if (isDuplicate && !messages.isEmpty()) {
-            // Update the last message with incremented count
             lastMessageCount++;
-            // Note: Format is " (x2)" for LibGDX, while webapp uses a styled badge.
-            // This difference is intentional: LibGDX uses plain text labels,
-            // while webapp can style a separate DOM element with colors/backgrounds.
             String countIndicator = " (x" + lastMessageCount + ")";
             String updatedMessage = String.format("[%s] %s: %s%s", timeStr, msgUsername, content, countIndicator);
-            
-            // Replace the last message
             messages.set(messages.size() - 1, updatedMessage);
         } else {
-            // Add new message (not a duplicate, or different from last message)
             String formattedMessage = String.format("[%s] %s: %s", timeStr, msgUsername, content);
             messages.add(formattedMessage);
-            
-            // Update tracking variables to reference this newly added message
-            // Note: These track content/username, not list indices
             lastMessageUsername = msgUsername;
             lastMessageContent = content;
             lastMessageCount = 1;
             
-            // Keep only last MAX_MESSAGES
             if (messages.size() > MAX_MESSAGES) {
-                // Remove the oldest message (index 0)
-                // This is safe: our tracking variables now point to the message we JUST added
-                // (which is at the end of the list), so removing the oldest doesn't affect tracking
                 messages.remove(0);
             }
         }
+    }
 
+    private void addMessage(String msgUsername, String content, String timestamp) {
+        addMessageToList(msgUsername, content, timestamp);
         refreshMessagesUI();
     }
 
@@ -622,6 +627,7 @@ public class ChatScreen implements Screen {
 
     @Override
     public void dispose() {
+        disposed = true;
         if (webSocketClient != null) {
             webSocketClient.close();
         }

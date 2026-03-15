@@ -184,6 +184,13 @@ public class LoginScreen implements Screen {
                     submitButton.setDisabled(false);
                     submitButton.setText(loginMode ? "Login" : "Register");
                 });
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Unexpected error during authentication", e);
+                Gdx.app.postRunnable(() -> {
+                    errorLabel.setText("An unexpected error occurred. Please try again.");
+                    submitButton.setDisabled(false);
+                    submitButton.setText(loginMode ? "Login" : "Register");
+                });
             }
         }).start();
     }

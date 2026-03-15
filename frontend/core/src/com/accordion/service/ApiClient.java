@@ -79,13 +79,23 @@ public class ApiClient {
      */
     public List<ChannelInfo> getChannels() throws ApiException {
         String responseStr = getRequest("/api/channels");
-        JsonArray array = gson.fromJson(responseStr, JsonArray.class);
-        List<ChannelInfo> channels = new ArrayList<>();
-        for (int i = 0; i < array.size(); i++) {
-            JsonObject obj = array.get(i).getAsJsonObject();
-            channels.add(parseChannel(obj));
+        try {
+            JsonArray array = gson.fromJson(responseStr, JsonArray.class);
+            if (array == null) {
+                throw new ApiException("Invalid response from server: empty channel list", 0);
+            }
+            List<ChannelInfo> channels = new ArrayList<>();
+            for (int i = 0; i < array.size(); i++) {
+                JsonObject obj = array.get(i).getAsJsonObject();
+                channels.add(parseChannel(obj));
+            }
+            return channels;
+        } catch (ApiException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to parse channels response", e);
+            throw new ApiException("Failed to parse server response: " + e.getMessage(), 0);
         }
-        return channels;
     }
 
     /**
@@ -112,18 +122,28 @@ public class ApiClient {
      */
     public List<MessageInfo> getMessages(long channelId, int limit) throws ApiException {
         String responseStr = getRequest("/api/messages?channelId=" + channelId + "&limit=" + limit);
-        JsonArray array = gson.fromJson(responseStr, JsonArray.class);
-        List<MessageInfo> messages = new ArrayList<>();
-        for (int i = 0; i < array.size(); i++) {
-            JsonObject obj = array.get(i).getAsJsonObject();
-            messages.add(new MessageInfo(
-                obj.has("username") ? obj.get("username").getAsString() : "Unknown",
-                obj.has("content") ? obj.get("content").getAsString() : "",
-                obj.has("timestamp") ? obj.get("timestamp").getAsString() : "",
-                obj.has("channelId") && !obj.get("channelId").isJsonNull() ? obj.get("channelId").getAsLong() : 0
-            ));
+        try {
+            JsonArray array = gson.fromJson(responseStr, JsonArray.class);
+            if (array == null) {
+                throw new ApiException("Invalid response from server: empty message list", 0);
+            }
+            List<MessageInfo> messages = new ArrayList<>();
+            for (int i = 0; i < array.size(); i++) {
+                JsonObject obj = array.get(i).getAsJsonObject();
+                messages.add(new MessageInfo(
+                    obj.has("username") ? obj.get("username").getAsString() : "Unknown",
+                    obj.has("content") ? obj.get("content").getAsString() : "",
+                    obj.has("timestamp") ? obj.get("timestamp").getAsString() : "",
+                    obj.has("channelId") && !obj.get("channelId").isJsonNull() ? obj.get("channelId").getAsLong() : 0
+                ));
+            }
+            return messages;
+        } catch (ApiException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to parse messages response", e);
+            throw new ApiException("Failed to parse server response: " + e.getMessage(), 0);
         }
-        return messages;
     }
 
     private ChannelInfo parseChannel(JsonObject obj) {

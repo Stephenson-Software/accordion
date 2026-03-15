@@ -217,6 +217,7 @@ public class ChatWebSocketClient extends WebSocketClient {
     public void onClose(int code, String reason, boolean remote) {
         LOGGER.info("WebSocket connection closed: " + reason);
         connected = false;
+        resetSubscriptionState();
         notifyConnectionStatus(false);
     }
 
@@ -224,7 +225,15 @@ public class ChatWebSocketClient extends WebSocketClient {
     public void onError(Exception ex) {
         LOGGER.log(Level.SEVERE, "WebSocket error", ex);
         connected = false;
+        resetSubscriptionState();
         notifyConnectionStatus(false);
+    }
+
+    private void resetSubscriptionState() {
+        messageSubId = null;
+        typingSubId = null;
+        subscriptionCounter = 0;
+        currentChannelId = null;
     }
 
     private void notifyConnectionStatus(boolean status) {
