@@ -23,7 +23,8 @@ A self-hosted real-time chat application with a Spring Boot WebSocket backend, a
 4. **Controllers**:
    - `UserController`: REST API for user registration, login, and username availability
    - `ChannelController`: REST API for listing and creating channels
-   - `ChatController`: WebSocket message handler (plus the `/api/messages` history endpoint)
+   - `ChatController`: WebSocket message handler
+   - `MessageRestController`: REST API for message history (`/api/messages`); declared alongside `ChatController` in the same file
 5. **Services**: Business logic for user, channel, and message management
 6. **Security**: Spring Security with BCrypt password hashing and JWT bearer tokens
    - `SecurityConfig`: stateless filter chain; permits `/api/users/register`, `/api/users/login`, `/ws/**`, and `/h2-console/**`, and requires authentication for everything else
