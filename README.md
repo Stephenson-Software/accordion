@@ -4,7 +4,7 @@
 
 ## Overview
 
-Accordion is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, username-based login, and real-time messaging.
+Accordion is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, password-based authentication, and real-time messaging.
 
 **Technology Stack:**
 - **Backend**: Spring Boot 3.x, WebSocket (STOMP), H2 Database, Spring Data JPA
@@ -15,7 +15,8 @@ Accordion is a Discord-like self-hosted chat application designed for simplicity
 
 - ✅ **Multiple chat rooms/channels** - Create and switch between different channels
 - ✅ Single chat room (global) - Backwards compatible default channel
-- ✅ Username-based login (no password required for MVP)
+- ✅ Password-based authentication (Spring Security, BCrypt-hashed passwords, JWT bearer tokens)
+- ✅ Authenticated WebSocket sessions (STOMP `CONNECT` frames require a valid JWT)
 - ✅ Real-time message broadcasting via WebSocket
 - ✅ **Message persistence in H2 database (survives container restarts)**
 - ✅ Message history on login (channel-specific)
@@ -87,14 +88,18 @@ cd frontend && ./gradlew desktop:run
 
 **Web Application (Browser):**
 1. Navigate to `http://localhost:3000`
-2. Enter your username (minimum 3 characters, alphanumeric + underscore)
-3. Click "Join Chat"
-4. **Select a channel from the sidebar** or create a new one with "+ New Channel"
-5. Type your message and click "Send" or press Enter
-6. **Switch between channels** by clicking on channel names in the sidebar
-7. Open in multiple browser tabs to test real-time messaging across channels
+2. Click "Register" to switch the form to registration mode on a first visit
+3. Enter your username (minimum 3 characters, alphanumeric + underscore) and a password (minimum 8 characters, containing an uppercase letter, a lowercase letter, and a digit)
+4. Submit the form — the returned JWT is used for the REST calls and the WebSocket handshake that follow
+5. **Select a channel from the sidebar** or create a new one with "+ New Channel"
+6. Type your message and click "Send" or press Enter
+7. **Switch between channels** by clicking on channel names in the sidebar
+8. Open in multiple browser tabs to test real-time messaging across channels
 
 **LibGDX Desktop Client:**
+
+> **Note:** The desktop client predates the JWT authentication described below and has not been updated for it. `ChatWebSocketClient` sends a STOMP `CONNECT` frame with no `Authorization` header, which `WebSocketAuthInterceptor` rejects, so the client cannot connect to the current backend. Use the web application until desktop parity lands.
+
 1. **Frontend window will open** (800x600)
 2. **Enter your username** (minimum 3 characters)
 3. **Click "Login"** to enter the chat room
@@ -104,12 +109,23 @@ cd frontend && ./gradlew desktop:run
 **Backend API:**
 - Backend runs on `http://localhost:8080`
 - WebSocket endpoint: `ws://localhost:8080/ws`
+- Authentication: every endpoint except those marked *public* below requires an
+  `Authorization: Bearer <token>` header. Tokens are issued by the register and
+  login endpoints. See [MVP.md](MVP.md) for request and response shapes.
 - REST API endpoints:
+  - `POST /api/users/register` - Register a new user, returns a JWT (*public*)
+  - `POST /api/users/login` - Log in, returns a JWT (*public*)
+  - `GET /api/users/check/{username}` - Report whether a username is taken
   - `GET /api/channels` - List all channels
   - `POST /api/channels` - Create a new channel
   - `GET /api/channels/{id}` - Get channel details
-  - `GET /api/messages?channelId={id}` - Get messages for a specific channel
-  - `POST /api/users/login` - User login
+  - `GET /api/messages?limit={n}&channelId={id}` - Get recent messages, optionally scoped to a channel
+- STOMP destinations (application prefix `/app`, broker prefix `/topic`):
+  - Send `/app/chat.send` → broadcast on `/topic/messages` (default channel)
+  - Send `/app/chat.send/{channelId}` → broadcast on `/topic/messages/{channelId}`
+  - Send `/app/chat.join` → broadcast on `/topic/messages` (default channel)
+  - Send `/app/chat.join/{channelId}` → broadcast on `/topic/messages/{channelId}`
+  - Send `/app/chat.typing/{channelId}` → broadcast on `/topic/typing/{channelId}`
 
 ## Docker Deployment
 
@@ -283,10 +299,12 @@ accordion-prototype/
 │   ├── pom.xml                    # Maven configuration
 │   └── src/main/java/com/accordion/
 │       ├── AccordionApplication.java
-│       ├── config/                # WebSocket configuration
+│       ├── config/                # WebSocket, Spring Security, and data seeding configuration
 │       ├── controller/            # REST and WebSocket controllers
+│       ├── dto/                   # Request/response payloads (login, register, auth)
 │       ├── model/                 # JPA entities
 │       ├── repository/            # Data repositories
+│       ├── security/              # JWT issuing/validation and authentication filters
 │       ├── service/               # Business logic
 │       └── util/                  # Validation utilities
 ├── webapp/                         # Spring Boot web application
@@ -341,24 +359,27 @@ spring.h2.console.enabled=true
 
 ### Frontend
 
-WebSocket endpoint is configured in `ChatScreen.java`:
-```java
-URI uri = new URI("ws://localhost:8080/ws");
-```
+The desktop client's WebSocket endpoint comes from `AppConfig.getWebSocketUrl()`,
+which defaults to `ws://localhost:8080/ws`. To connect to a remote server, override
+it with a system property rather than editing the source:
 
-To connect to a remote server, change `localhost` to your server's address.
+```bash
+./gradlew desktop:run -Daccordion.websocket.url=ws://yourserver.com:8080/ws
+```
 
 ## Development Roadmap
 
 See [MVP.md](MVP.md) for the complete roadmap and architecture details.
 
 ### Completed
-- ✅ Multiple chat rooms/channels - **NEW!**
-- ✅ Channel creation and management - **NEW!**
-- ✅ Channel-specific message history - **NEW!**
+- ✅ Multiple chat rooms/channels
+- ✅ Channel creation and management
+- ✅ Channel-specific message history
+- ✅ Password-based authentication with JWT (Spring Security)
+- ✅ Typing indicators (web application)
 
 ### Next Steps
-- User authentication (password-based)
+- Desktop client parity with the web application (JWT authentication, channels, typing indicators)
 - Private direct messages
 - User online/offline status
 - Message search and pagination
