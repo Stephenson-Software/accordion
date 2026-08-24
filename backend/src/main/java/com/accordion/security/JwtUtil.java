@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,11 +18,35 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    /**
+     * Minimum secret length in bytes. HS256 signing keys must be at least as long as the
+     * algorithm's 256-bit output, and Keys.hmacShaKeyFor rejects anything shorter.
+     */
+    static final int MIN_SECRET_LENGTH_BYTES = 32;
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private Long expiration;
+
+    /**
+     * Rejects an unusable signing secret at startup rather than on the first token
+     * operation, so a misconfigured deployment fails immediately and visibly.
+     */
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be set to a non-blank value. Generate one with: openssl rand -base64 48");
+        }
+        int length = secret.getBytes(StandardCharsets.UTF_8).length;
+        if (length < MIN_SECRET_LENGTH_BYTES) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be at least " + MIN_SECRET_LENGTH_BYTES + " bytes for HS256, but is "
+                            + length + ". Generate one with: openssl rand -base64 48");
+        }
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

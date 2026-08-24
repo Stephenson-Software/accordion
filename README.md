@@ -42,6 +42,10 @@ Accordion is a Discord-like self-hosted chat application designed for simplicity
 ```bash
 # Copy sample environment file and customize if needed
 cp sample.env .env
+
+# Set the required JWT signing secret (the backend will not start without it)
+sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
+
 # Edit .env to configure ports and other settings
 
 # Start all services (backend + web app)
@@ -59,7 +63,8 @@ open http://localhost:3000
 **Option 2: Run services manually**
 
 ```bash
-# Terminal 1 - Start backend
+# Terminal 1 - Start backend (JWT_SECRET is required; startup fails without it)
+export JWT_SECRET="$(openssl rand -base64 48)"
 cd backend
 mvn spring-boot:run
 
@@ -77,7 +82,8 @@ cd frontend
 **Option 3: Run backend + multiple LibGDX clients**
 
 ```bash
-# Terminal 1 - Start backend
+# Terminal 1 - Start backend (JWT_SECRET is required; startup fails without it)
+export JWT_SECRET="$(openssl rand -base64 48)"
 cd backend && mvn spring-boot:run
 
 # Terminal 2+ - Start as many LibGDX clients as you want
@@ -143,21 +149,27 @@ The application uses environment variables for configuration. A `sample.env` fil
 cp sample.env .env
 
 # Edit .env to configure:
+# - The required JWT signing secret (JWT_SECRET)
 # - Port numbers (BACKEND_PORT, WEBAPP_PORT)
 # - CORS settings (APP_CORS_ALLOWED_ORIGINS)
 # - Database configuration
-# - Validation rules (message length, username constraints)
+# - Validation rules (message length, username and password constraints)
 # - And more...
 ```
 
 **Key configuration options:**
 
+- `JWT_SECRET`: **Required.** JWT signing secret, at least 32 bytes, with no default — the
+  backend fails to start when it is missing, blank, or too short. Generate one with
+  `openssl rand -base64 48` and use a distinct value per deployment.
+- `JWT_EXPIRATION`: JWT lifetime in milliseconds (default: 86400000, i.e. 24 hours)
 - `BACKEND_PORT`: Backend service port (default: 8080)
 - `WEBAPP_PORT`: Web application port (default: 3000)
 - `APP_CORS_ALLOWED_ORIGINS`: CORS allowed origins (default: `*` for development)
 - `APP_MESSAGE_MAX_LENGTH`: Maximum message length (default: 1000)
 - `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
+- `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
 
 See `sample.env` for the complete list of configurable options.
 
@@ -192,6 +204,7 @@ docker build -t accordion-backend:latest -f Dockerfile .
 # Run the container
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   --name accordion-backend \
   accordion-backend:latest
 ```
@@ -230,6 +243,7 @@ Configure the application using environment variables:
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com" \
   -e APP_USERNAME_MIN_LENGTH=5 \
   -e APP_MESSAGE_MAX_LENGTH=500 \
