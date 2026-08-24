@@ -10,8 +10,9 @@ This guide covers deploying the Accordion Chat application (backend and web appl
 # Copy and customize environment configuration
 cp sample.env .env
 
-# Set the required JWT signing secret (the backend will not start without it)
-sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
+# Generate a signing secret and set it as JWT_SECRET in .env
+# (the backend will not start without it)
+openssl rand -base64 48
 
 # Edit .env to customize ports and settings
 
@@ -143,7 +144,9 @@ docker build -t accordion-backend:latest .
 
 ### Running the Container
 
-`JWT_SECRET` is required; the container exits at startup without it.
+`JWT_SECRET` is required; the container exits at startup without it. Generating a fresh secret on
+each run, as below, invalidates every previously issued token — supply a stable value from your
+own secret store when tokens need to survive a restart.
 
 ```bash
 docker run -d \

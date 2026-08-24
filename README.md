@@ -43,8 +43,9 @@ Accordion is a Discord-like self-hosted chat application designed for simplicity
 # Copy sample environment file and customize if needed
 cp sample.env .env
 
-# Set the required JWT signing secret (the backend will not start without it)
-sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
+# Generate a signing secret and set it as JWT_SECRET in .env
+# (the backend will not start without it)
+openssl rand -base64 48
 
 # Edit .env to configure ports and other settings
 

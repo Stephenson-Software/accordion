@@ -6,6 +6,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class JwtUtilTest {
 
     private static final String VALID_SECRET = "TestSecretKeyForJwtUtilTestsMinimum32BytesRequired";
+    private static final long EXPIRATION_MS = 86400000L;
 
     private JwtUtil jwtUtil;
 
@@ -20,7 +22,7 @@ class JwtUtilTest {
     void setUp() {
         jwtUtil = new JwtUtil();
         ReflectionTestUtils.setField(jwtUtil, "secret", VALID_SECRET);
-        ReflectionTestUtils.setField(jwtUtil, "expiration", 86400000L);
+        ReflectionTestUtils.setField(jwtUtil, "expiration", EXPIRATION_MS);
     }
 
     @Test
@@ -103,8 +105,14 @@ class JwtUtilTest {
 
     @Test
     void testExtractExpiration_ReflectsConfiguredLifetime() {
+        long issuedAt = System.currentTimeMillis();
         String token = jwtUtil.generateToken("alice");
 
-        assertTrue(jwtUtil.extractExpiration(token).after(new java.util.Date()));
+        Date expiration = jwtUtil.extractExpiration(token);
+        assertTrue(expiration.after(new Date()));
+        // JWT expiry has one-second resolution, so allow a second of slack either side
+        long expectedExpiry = issuedAt + EXPIRATION_MS;
+        assertTrue(Math.abs(expiration.getTime() - expectedExpiry) < 2000,
+                "expected expiry near " + expectedExpiry + " but was " + expiration.getTime());
     }
 }
