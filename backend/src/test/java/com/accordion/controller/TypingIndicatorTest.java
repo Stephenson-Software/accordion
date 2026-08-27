@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,10 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@TestPropertySource(properties = {
+    "jwt.secret=TestSecretKeyForTypingIndicatorMinimum32BytesRequired",
+    "jwt.expiration=86400000"
+})
 public class TypingIndicatorTest {
 
     @Autowired

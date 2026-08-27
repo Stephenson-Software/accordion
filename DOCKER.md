@@ -9,6 +9,11 @@ This guide covers deploying the Accordion Chat application (backend and web appl
 ```bash
 # Copy and customize environment configuration
 cp sample.env .env
+
+# Generate a signing secret and set it as JWT_SECRET in .env
+# (the backend will not start without it)
+openssl rand -base64 48
+
 # Edit .env to customize ports and settings
 
 # Start all services (backend + webapp)
@@ -48,6 +53,10 @@ nano .env  # or use your preferred editor
 - `WEBAPP_SERVER_PORT`: Internal webapp container port (default: 3000)
 
 #### Security & CORS
+- `JWT_SECRET`: **Required.** Signing secret for JWT bearer tokens, at least 32 bytes. There is
+  no default — the backend fails to start when it is missing, blank, or too short. Generate one
+  with `openssl rand -base64 48` and use a distinct value per deployment.
+- `JWT_EXPIRATION`: Token lifetime in milliseconds (default: 86400000, i.e. 24 hours)
 - `APP_CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed origins
   - Development: `*` (allows all origins)
   - Production: `http://localhost:3000,https://chat.example.com`
@@ -56,6 +65,7 @@ nano .env  # or use your preferred editor
 - `APP_MESSAGE_MAX_LENGTH`: Maximum message length in characters (default: 1000)
 - `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
+- `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
 
 #### Database Configuration (H2)
 - `SPRING_DATASOURCE_URL`: Database connection URL
@@ -134,9 +144,14 @@ docker build -t accordion-backend:latest .
 
 ### Running the Container
 
+`JWT_SECRET` is required; the container exits at startup without it. Generating a fresh secret on
+each run, as below, invalidates every previously issued token — supply a stable value from your
+own secret store when tokens need to survive a restart.
+
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   --name accordion-backend \
   accordion-backend:latest
 ```
@@ -173,6 +188,7 @@ Configure the application using environment variables:
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com,https://app.yourdomain.com" \
   --name accordion-backend \
   accordion-backend:latest
@@ -183,8 +199,10 @@ docker run -d \
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -e APP_USERNAME_MIN_LENGTH=5 \
   -e APP_USERNAME_MAX_LENGTH=30 \
+  -e APP_PASSWORD_MIN_LENGTH=12 \
   -e APP_MESSAGE_MAX_LENGTH=500 \
   --name accordion-backend \
   accordion-backend:latest
@@ -195,16 +213,21 @@ docker run -d \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SERVER_PORT` | `8080` | Server port |
+| `JWT_SECRET` | *(none — required)* | JWT signing secret, at least 32 bytes; startup fails without it |
+| `JWT_EXPIRATION` | `86400000` | JWT lifetime in milliseconds (24 hours) |
 | `APP_CORS_ALLOWED_ORIGINS` | `*` | Allowed CORS origins (use specific domains in production) |
 | `APP_USERNAME_MIN_LENGTH` | `3` | Minimum username length |
 | `APP_USERNAME_MAX_LENGTH` | `50` | Maximum username length |
+| `APP_PASSWORD_MIN_LENGTH` | `8` | Minimum password length |
 | `APP_MESSAGE_MAX_LENGTH` | `1000` | Maximum message content length |
 | `SPRING_JPA_SHOW_SQL` | `false` | Show SQL queries in logs |
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
 
 ## Health Checks
 
-The container includes automatic health checks that ping the `/api/messages` endpoint every 30 seconds. The container is considered healthy when this endpoint responds successfully.
+The container includes automatic health checks that ping the `/ws` endpoint every 30 seconds. The container is considered healthy when this endpoint responds successfully.
+
+`/ws` is used because it is one of the few endpoints Spring Security permits anonymously; every `/api/**` endpoint other than registration and login answers an unauthenticated probe with `401`, which would leave the container permanently unhealthy.
 
 Check health status:
 
@@ -216,17 +239,21 @@ docker inspect --format='{{.State.Health.Status}}' accordion-backend
 
 ### Security Recommendations
 
-1. **Set Specific CORS Origins**:
+1. **Use a Unique JWT Secret**: Generate `JWT_SECRET` with `openssl rand -base64 48`, use a
+   distinct value per deployment, and keep it out of version control. Rotating the secret
+   invalidates every issued token, so users must log in again.
+
+2. **Set Specific CORS Origins**:
    ```yaml
    environment:
      - APP_CORS_ALLOWED_ORIGINS=https://yourdomain.com
    ```
 
-2. **Use Secrets for Sensitive Data**: For production databases, use Docker secrets or environment files.
+3. **Use Secrets for Sensitive Data**: For production databases, use Docker secrets or environment files.
 
-3. **Run Behind Reverse Proxy**: Use Nginx or Traefik for SSL termination and load balancing.
+4. **Run Behind Reverse Proxy**: Use Nginx or Traefik for SSL termination and load balancing.
 
-4. **Resource Limits**: Add resource constraints to prevent resource exhaustion:
+5. **Resource Limits**: Add resource constraints to prevent resource exhaustion:
    ```yaml
    services:
      backend:
@@ -451,6 +478,22 @@ healthcheck:
   start_period: 60s
 ```
 
+Point the probe at a publicly reachable endpoint. `/ws` is permitted anonymously, whereas every
+`/api/**` endpoint other than `/api/users/register` and `/api/users/login` returns `401` to an
+unauthenticated probe and can never report healthy.
+
+### Backend Container Exits Immediately
+
+Check the logs for a missing or unusable signing secret:
+
+```bash
+docker compose logs backend
+```
+
+`JWT_SECRET` is required and has no default. A missing value fails placeholder resolution, and a
+blank or shorter-than-32-byte value is rejected at startup. Set it in `.env` and recreate the
+service with `docker compose up -d`.
+
 ### Build Issues
 
 ```bash
@@ -471,6 +514,7 @@ For development, mount the source code as a volume:
 # Build and run with hot reload (requires spring-boot-devtools)
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -v $(pwd)/backend/src:/app/src \
   --name accordion-backend-dev \
   accordion-backend:latest

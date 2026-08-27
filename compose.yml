@@ -34,11 +34,18 @@ services:
       # CORS configuration
       # For production, set to specific domains
       - APP_CORS_ALLOWED_ORIGINS=${APP_CORS_ALLOWED_ORIGINS:-*}
-      
+
+      # JWT configuration
+      # JWT_SECRET is required and intentionally has no default: the backend refuses to
+      # start without it. Set it in .env (see sample.env for how to generate one).
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
+
       # Validation configuration
       - APP_MESSAGE_MAX_LENGTH=${APP_MESSAGE_MAX_LENGTH:-1000}
       - APP_USERNAME_MAX_LENGTH=${APP_USERNAME_MAX_LENGTH:-50}
       - APP_USERNAME_MIN_LENGTH=${APP_USERNAME_MIN_LENGTH:-3}
+      - APP_PASSWORD_MIN_LENGTH=${APP_PASSWORD_MIN_LENGTH:-8}
     
     volumes:
       - h2_data:/app/data

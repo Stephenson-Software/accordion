@@ -175,8 +175,9 @@ app.username.min-length=3
 app.password.min-length=8
 
 # JWT Configuration
-# Startup fails fast when JWT_SECRET is not set; no default is shipped.
-jwt.secret=${JWT_SECRET:?JWT_SECRET environment variable must be set}
+# The placeholder carries no default, so an absent JWT_SECRET is unresolvable and
+# startup fails. JwtUtil additionally rejects a blank or shorter-than-32-byte secret.
+jwt.secret=${JWT_SECRET}
 jwt.expiration=86400000
 ```
 
@@ -512,8 +513,9 @@ kill -9 <PID>
 ```
 
 **Backend exits at startup with a `JWT_SECRET` placeholder error**:
-- Expected behavior — `jwt.secret` is declared with the fail-fast `${JWT_SECRET:?...}` form, so no default secret ships
+- Expected behavior — `jwt.secret` is declared as a bare `${JWT_SECRET}` placeholder with no default, so no secret ships with the application
 - Export a value of at least 32 bytes before starting: `export JWT_SECRET="$(openssl rand -base64 48)"`
+- A blank or shorter-than-32-byte value produces an `IllegalStateException` from `JwtUtil` instead, naming the required length
 
 **Database connection errors**:
 - Check H2 console configuration
