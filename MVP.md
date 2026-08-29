@@ -245,16 +245,18 @@ accordion-prototype/
 │       └── test/                  # JUnit 5 test suite (mirrors the main tree)
 ├── webapp/                         # Spring Boot web application
 │   ├── pom.xml                    # Maven configuration
-│   └── src/main/
-│       ├── java/com/accordion/webapp/
-│       │   ├── AccordionWebApplication.java
-│       │   └── controller/
-│       │       └── ChatController.java
-│       └── resources/
-│           ├── templates/
-│           │   ├── index.html     # Login and registration page
-│           │   └── chat.html      # Chat interface
-│           └── application.properties
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/accordion/webapp/
+│       │   │   ├── AccordionWebApplication.java
+│       │   │   └── controller/
+│       │   │       └── ChatController.java
+│       │   └── resources/
+│       │       ├── templates/
+│       │       │   ├── index.html # Login and registration page
+│       │       │   └── chat.html  # Chat interface
+│       │       └── application.properties
+│       └── test/                  # JUnit 5 test suite (mirrors the main tree)
 └── frontend/                       # LibGDX frontend
     ├── build.gradle               # Root Gradle config
     ├── settings.gradle
@@ -411,8 +413,8 @@ milliseconds (default `86400000`, i.e. 24 hours).
 
 ### Backend Testing
 
-The backend is the only module with an automated test suite (JUnit 5, Spring Boot
-Test, Mockito, and `spring-security-test`):
+The backend carries the largest automated test suite (JUnit 5, Spring Boot Test,
+Mockito, and `spring-security-test`):
 
 ```bash
 cd backend
@@ -421,8 +423,15 @@ mvn test
 
 ### Web Application Testing
 
-The `webapp` module has no test sources, so `mvn test` reports `No tests to run.`
-Building it verifies compilation and packaging only:
+The `webapp` module has a `@WebMvcTest` slice suite covering `ChatController`'s view
+names and the backend URLs it exposes to the browser:
+
+```bash
+cd webapp
+mvn test
+```
+
+Packaging additionally verifies the Thymeleaf templates and the executable jar:
 
 ```bash
 cd webapp
@@ -441,9 +450,10 @@ cd frontend
 
 ### Continuous Integration
 
-`.github/workflows/ci.yml` runs two jobs on every pull request: **Backend Build and
-Test**, which executes the backend suite, and **Frontend Build**, which compiles the
-LibGDX modules. No job builds `webapp`, and no job exercises `compose.yml` or the
+`.github/workflows/ci.yml` runs three jobs on every pull request: **Backend Build and
+Test** and **Webapp Build and Test**, which execute those modules' suites, and
+**Frontend Build**, which compiles the LibGDX modules without running any test
+(`./gradlew test` is `NO-SOURCE` there). No job exercises `compose.yml` or the
 Dockerfiles, so changes to those must be verified locally.
 
 ### Manual Testing Checklist

@@ -324,15 +324,17 @@ accordion-prototype/
 │       └── util/                  # Validation utilities
 ├── webapp/                         # Spring Boot web application
 │   ├── pom.xml                    # Maven configuration
-│   └── src/main/
-│       ├── java/com/accordion/webapp/
-│       │   ├── AccordionWebApplication.java
-│       │   └── controller/        # Web controllers
-│       └── resources/
-│           ├── templates/         # Thymeleaf HTML templates
-│           │   ├── index.html    # Login page
-│           │   └── chat.html     # Chat interface
-│           └── application.properties
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/accordion/webapp/
+│       │   │   ├── AccordionWebApplication.java
+│       │   │   └── controller/    # Web controllers
+│       │   └── resources/
+│       │       ├── templates/     # Thymeleaf HTML templates
+│       │       │   ├── index.html # Login page
+│       │       │   └── chat.html  # Chat interface
+│       │       └── application.properties
+│       └── test/                  # JUnit 5 test suite (mirrors the main tree)
 └── frontend/                       # LibGDX frontend (desktop)
     ├── build.gradle               # Root Gradle config
     ├── core/                      # Shared code
