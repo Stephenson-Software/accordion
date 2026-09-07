@@ -1,4 +1,4 @@
-# Dockerfile for Accord Chat Backend
+# Dockerfile for Accordion Chat Backend
 # Multi-stage build for smaller image size
 
 # Stage 1: Build
@@ -40,8 +40,10 @@ USER spring:spring
 EXPOSE 8080
 
 # Health check
+# Probes /ws, which SecurityConfig permits anonymously. Authenticated endpoints such as
+# /api/messages answer an unauthenticated probe with 401 and can never report healthy.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/messages || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ws || exit 1
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

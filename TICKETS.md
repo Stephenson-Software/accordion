@@ -1,4 +1,4 @@
-# Accord Chat Development Tickets
+# Accordion Chat Development Tickets
 
 This document breaks down the development roadmap from [MVP.md](MVP.md) into actionable tickets. Each ticket represents a specific feature or improvement that can be tracked and implemented.
 
@@ -255,7 +255,7 @@ Create comprehensive documentation for MVP including setup, usage, and API refer
 
 ---
 
-## Phase 2: Enhanced Features - [PLANNED] PLANNED
+## Phase 2: Enhanced Features - [IN_PROGRESS] IN PROGRESS
 
 ### [COMPLETED] TICKET-101: Multiple Chat Rooms/Channels
 **Status:** [COMPLETED]
@@ -284,8 +284,8 @@ Extend the application to support multiple chat rooms/channels. Users can create
 
 **Dependencies:** None
 
-### [PLANNED] TICKET-102: User Authentication System
-**Status:** [PLANNED] Planned  
+### [COMPLETED] TICKET-102: User Authentication System
+**Status:** [COMPLETED]  
 **Priority:** P1  
 **Component:** Backend, Security
 
@@ -293,16 +293,23 @@ Extend the application to support multiple chat rooms/channels. Users can create
 Implement password-based authentication with Spring Security for secure user access.
 
 **Acceptance Criteria:**
-- [ ] Add Spring Security dependency
-- [ ] Add password field to User entity (hashed with BCrypt)
-- [ ] Create authentication configuration class
-- [ ] Implement user registration endpoint with password
-- [ ] Implement login endpoint returning JWT token
-- [ ] Add password validation (min length, complexity)
-- [ ] Protect WebSocket connections with authentication
-- [ ] Update UserController with registration and login
-- [ ] Add password reset mechanism (stretch)
-- [ ] Test authentication flow end-to-end
+- [x] Add Spring Security dependency
+- [x] Add password field to User entity (hashed with BCrypt)
+- [x] Create authentication configuration class
+- [x] Implement user registration endpoint with password
+- [x] Implement login endpoint returning JWT token
+- [x] Add password validation (min length, complexity)
+- [x] Protect WebSocket connections with authentication
+- [x] Update UserController with registration and login
+- [ ] Add password reset mechanism (stretch) — not implemented, tracked separately
+- [x] Test authentication flow end-to-end
+
+**Note:** The stretch password-reset criterion is deliberately left unchecked; the
+ticket is considered complete without it. The LibGDX desktop client has not been
+updated for this authentication model and cannot connect to the backend as a
+result — that gap is tracked separately, not by this ticket. Coverage lives in
+`backend/src/test/java/com/accordion/security/SecurityConfigIntegrationTest.java`
+and `backend/src/test/java/com/accordion/controller/UserControllerTest.java`.
 
 **Estimated Effort:** 3-4 days
 
@@ -356,8 +363,8 @@ Track and display user online/offline status in real-time using WebSocket lifecy
 
 **Dependencies:** None
 
-### [PLANNED] TICKET-105: Typing Indicators
-**Status:** [PLANNED] Planned  
+### [COMPLETED] TICKET-105: Typing Indicators
+**Status:** [COMPLETED]  
 **Priority:** P2  
 **Component:** Backend, Frontend, WebSocket
 
@@ -365,14 +372,20 @@ Track and display user online/offline status in real-time using WebSocket lifecy
 Show typing indicators when users are composing messages in a channel.
 
 **Acceptance Criteria:**
-- [ ] Create typing indicator message type
-- [ ] Send typing events when user types (debounced)
-- [ ] Backend: Broadcast typing events to /topic/typing/{channelId}
-- [ ] Frontend: Subscribe to typing events
-- [ ] Frontend: Display "User is typing..." indicator
-- [ ] Implement timeout to clear stale typing indicators
-- [ ] Don't show typing indicator for the current user
-- [ ] Test with multiple concurrent typers
+- [x] Create typing indicator message type
+- [x] Send typing events when user types (debounced)
+- [x] Backend: Broadcast typing events to /topic/typing/{channelId}
+- [x] Frontend: Subscribe to typing events
+- [x] Frontend: Display "User is typing..." indicator
+- [x] Implement timeout to clear stale typing indicators
+- [x] Don't show typing indicator for the current user
+- [ ] Test with multiple concurrent typers — the UI renders one, two, and three-or-more typers, but no automated test covers it and no manual run is recorded
+
+**Note:** The frontend criteria are satisfied by the web application
+(`webapp/src/main/resources/templates/chat.html`). The LibGDX desktop client has no
+typing-indicator support; desktop parity is tracked separately, not by this ticket.
+Backend coverage lives in
+`backend/src/test/java/com/accordion/controller/TypingIndicatorTest.java`.
 
 **Estimated Effort:** 1-2 days
 

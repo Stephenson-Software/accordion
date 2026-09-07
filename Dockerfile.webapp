@@ -1,4 +1,4 @@
-# Dockerfile for Accord Web Application
+# Dockerfile for Accordion Web Application
 # Multi-stage build for smaller image size
 
 # Stage 1: Build

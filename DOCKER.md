@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide covers deploying the Accord Chat application (backend and web application) using Docker and Docker Compose.
+This guide covers deploying the Accordion Chat application (backend and web application) using Docker and Docker Compose.
 
 ## Quick Start
 
@@ -9,6 +9,11 @@ This guide covers deploying the Accord Chat application (backend and web applica
 ```bash
 # Copy and customize environment configuration
 cp sample.env .env
+
+# Generate a signing secret and set it as JWT_SECRET in .env
+# (the backend will not start without it)
+openssl rand -base64 48
+
 # Edit .env to customize ports and settings
 
 # Start all services (backend + webapp)
@@ -48,6 +53,10 @@ nano .env  # or use your preferred editor
 - `WEBAPP_SERVER_PORT`: Internal webapp container port (default: 3000)
 
 #### Security & CORS
+- `JWT_SECRET`: **Required.** Signing secret for JWT bearer tokens, at least 32 bytes. There is
+  no default — the backend fails to start when it is missing, blank, or too short. Generate one
+  with `openssl rand -base64 48` and use a distinct value per deployment.
+- `JWT_EXPIRATION`: Token lifetime in milliseconds (default: 86400000, i.e. 24 hours)
 - `APP_CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed origins
   - Development: `*` (allows all origins)
   - Production: `http://localhost:3000,https://chat.example.com`
@@ -56,6 +65,7 @@ nano .env  # or use your preferred editor
 - `APP_MESSAGE_MAX_LENGTH`: Maximum message length in characters (default: 1000)
 - `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
+- `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
 
 #### Database Configuration (H2)
 - `SPRING_DATASOURCE_URL`: Database connection URL
@@ -68,13 +78,13 @@ nano .env  # or use your preferred editor
 **Important**: The webapp uses TWO sets of backend URLs:
 
 1. **Server-side URLs** (webapp server → backend server, internal Docker network):
-   - `ACCORD_BACKEND_URL`: Backend API base URL (default: `http://backend:8080`)
-   - `ACCORD_BACKEND_WS_URL`: Backend WebSocket URL (default: `http://backend:8080/ws`)
+   - `ACCORDION_BACKEND_URL`: Backend API base URL (default: `http://backend:8080`)
+   - `ACCORDION_BACKEND_WS_URL`: Backend WebSocket URL (default: `http://backend:8080/ws`)
    - Uses Docker service name `backend` for internal communication
 
 2. **Client-side URLs** (browser → backend server, must be publicly accessible):
-   - `ACCORD_BACKEND_CLIENT_URL`: Backend API base URL for browser (default: `http://localhost:8080`)
-   - `ACCORD_BACKEND_CLIENT_WS_URL`: Backend WebSocket URL for browser (default: `http://localhost:8080/ws`)
+   - `ACCORDION_BACKEND_CLIENT_URL`: Backend API base URL for browser (default: `http://localhost:8080`)
+   - `ACCORDION_BACKEND_CLIENT_WS_URL`: Backend WebSocket URL for browser (default: `http://localhost:8080/ws`)
    - **Must use `localhost` or your public domain** - browsers cannot resolve Docker service names
 
 ### Example: Custom Ports
@@ -89,12 +99,12 @@ WEBAPP_PORT=4000            # Host port for webapp
 WEBAPP_SERVER_PORT=4000     # Container port for webapp
 
 # Server-side backend URLs (webapp server → backend, internal Docker network)
-ACCORD_BACKEND_URL=http://backend:9090
-ACCORD_BACKEND_WS_URL=http://backend:9090/ws
+ACCORDION_BACKEND_URL=http://backend:9090
+ACCORDION_BACKEND_WS_URL=http://backend:9090/ws
 
 # Client-side backend URLs (browser → backend, must use localhost or public domain)
-ACCORD_BACKEND_CLIENT_URL=http://localhost:9090
-ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
+ACCORDION_BACKEND_CLIENT_URL=http://localhost:9090
+ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
 ```
 
 **Important Notes:**
@@ -129,39 +139,44 @@ The `compose.yml` file provides a complete configuration for running both servic
 ### Building the Image
 
 ```bash
-docker build -t accord-backend:latest .
+docker build -t accordion-backend:latest .
 ```
 
 ### Running the Container
 
+`JWT_SECRET` is required; the container exits at startup without it. Generating a fresh secret on
+each run, as below, invalidates every previously issued token — supply a stable value from your
+own secret store when tokens need to survive a restart.
+
 ```bash
 docker run -d \
   -p 8080:8080 \
-  --name accord-backend \
-  accord-backend:latest
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### Viewing Logs
 
 ```bash
 # Follow logs
-docker logs -f accord-backend
+docker logs -f accordion-backend
 
 # View last 100 lines
-docker logs --tail 100 accord-backend
+docker logs --tail 100 accordion-backend
 ```
 
 ### Stopping and Removing
 
 ```bash
 # Stop the container
-docker stop accord-backend
+docker stop accordion-backend
 
 # Remove the container
-docker rm accord-backend
+docker rm accordion-backend
 
 # Remove the image
-docker rmi accord-backend:latest
+docker rmi accordion-backend:latest
 ```
 
 ## Environment Variables
@@ -173,9 +188,10 @@ Configure the application using environment variables:
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -e APP_CORS_ALLOWED_ORIGINS="https://yourdomain.com,https://app.yourdomain.com" \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### Validation Configuration
@@ -183,11 +199,13 @@ docker run -d \
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -e APP_USERNAME_MIN_LENGTH=5 \
   -e APP_USERNAME_MAX_LENGTH=30 \
+  -e APP_PASSWORD_MIN_LENGTH=12 \
   -e APP_MESSAGE_MAX_LENGTH=500 \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 ### All Available Environment Variables
@@ -195,38 +213,47 @@ docker run -d \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SERVER_PORT` | `8080` | Server port |
+| `JWT_SECRET` | *(none — required)* | JWT signing secret, at least 32 bytes; startup fails without it |
+| `JWT_EXPIRATION` | `86400000` | JWT lifetime in milliseconds (24 hours) |
 | `APP_CORS_ALLOWED_ORIGINS` | `*` | Allowed CORS origins (use specific domains in production) |
 | `APP_USERNAME_MIN_LENGTH` | `3` | Minimum username length |
 | `APP_USERNAME_MAX_LENGTH` | `50` | Maximum username length |
+| `APP_PASSWORD_MIN_LENGTH` | `8` | Minimum password length |
 | `APP_MESSAGE_MAX_LENGTH` | `1000` | Maximum message content length |
 | `SPRING_JPA_SHOW_SQL` | `false` | Show SQL queries in logs |
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
 
 ## Health Checks
 
-The container includes automatic health checks that ping the `/api/messages` endpoint every 30 seconds. The container is considered healthy when this endpoint responds successfully.
+The container includes automatic health checks that ping the `/ws` endpoint every 30 seconds. The container is considered healthy when this endpoint responds successfully.
+
+`/ws` is used because it is one of the few endpoints Spring Security permits anonymously; every `/api/**` endpoint other than registration and login answers an unauthenticated probe with `401`, which would leave the container permanently unhealthy.
 
 Check health status:
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' accord-backend
+docker inspect --format='{{.State.Health.Status}}' accordion-backend
 ```
 
 ## Production Deployment
 
 ### Security Recommendations
 
-1. **Set Specific CORS Origins**:
+1. **Use a Unique JWT Secret**: Generate `JWT_SECRET` with `openssl rand -base64 48`, use a
+   distinct value per deployment, and keep it out of version control. Rotating the secret
+   invalidates every issued token, so users must log in again.
+
+2. **Set Specific CORS Origins**:
    ```yaml
    environment:
      - APP_CORS_ALLOWED_ORIGINS=https://yourdomain.com
    ```
 
-2. **Use Secrets for Sensitive Data**: For production databases, use Docker secrets or environment files.
+3. **Use Secrets for Sensitive Data**: For production databases, use Docker secrets or environment files.
 
-3. **Run Behind Reverse Proxy**: Use Nginx or Traefik for SSL termination and load balancing.
+4. **Run Behind Reverse Proxy**: Use Nginx or Traefik for SSL termination and load balancing.
 
-4. **Resource Limits**: Add resource constraints to prevent resource exhaustion:
+5. **Resource Limits**: Add resource constraints to prevent resource exhaustion:
    ```yaml
    services:
      backend:
@@ -248,8 +275,8 @@ For production, replace H2 with PostgreSQL or MySQL:
 services:
   backend:
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/accorddb
-      - SPRING_DATASOURCE_USERNAME=accord
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/accordiondb
+      - SPRING_DATASOURCE_USERNAME=accordion
       - SPRING_DATASOURCE_PASSWORD=secure_password
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
@@ -258,8 +285,8 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=accorddb
-      - POSTGRES_USER=accord
+      - POSTGRES_DB=accordiondb
+      - POSTGRES_USER=accordion
       - POSTGRES_PASSWORD=secure_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -276,23 +303,23 @@ When running the frontend on the host machine and backend in Docker:
 
 ```bash
 # Frontend connects to backend
-./gradlew desktop:run -Daccord.websocket.url=ws://localhost:8080/ws
+./gradlew desktop:run -Daccordion.websocket.url=ws://localhost:8080/ws
 ```
 
 ### Running Multiple Services
 
-The compose configuration uses a bridge network (`accord-network`) that allows for future service expansion:
+The compose configuration uses a bridge network (`accordion-network`) that allows for future service expansion:
 
 ```yaml
 services:
   backend:
     networks:
-      - accord-network
+      - accordion-network
   
   # Add more services here
   # frontend-web:
   #   networks:
-  #     - accord-network
+  #     - accordion-network
 ```
 
 ## Troubleshooting
@@ -308,13 +335,13 @@ If the web application shows "Could not connect to server" errors:
 1. **Check your `.env` file has BOTH URL sets**:
    ```bash
    # Server-side URLs (webapp server → backend, internal Docker network)
-   ACCORD_BACKEND_URL=http://backend:8080
-   ACCORD_BACKEND_WS_URL=http://backend:8080/ws
+   ACCORDION_BACKEND_URL=http://backend:8080
+   ACCORDION_BACKEND_WS_URL=http://backend:8080/ws
    
    # Client-side URLs (browser → backend, must use localhost or public domain)
    DOCKER_HOST_IP=localhost
-   ACCORD_BACKEND_CLIENT_URL=http://localhost:8080
-   ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://localhost:8080
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws
    ```
 
 2. **If using custom ports**, update the client URLs:
@@ -323,15 +350,15 @@ If the web application shows "Could not connect to server" errors:
    BACKEND_PORT=9090
    SERVER_PORT=9090
    DOCKER_HOST_IP=localhost
-   ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:9090
-   ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:9090/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:9090
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:9090/ws
    ```
 
 3. **For production with a public domain**:
    ```bash
    DOCKER_HOST_IP=yourdomain.com
-   ACCORD_BACKEND_CLIENT_URL=https://${DOCKER_HOST_IP}
-   ACCORD_BACKEND_CLIENT_WS_URL=https://${DOCKER_HOST_IP}/ws
+   ACCORDION_BACKEND_CLIENT_URL=https://${DOCKER_HOST_IP}
+   ACCORDION_BACKEND_CLIENT_WS_URL=https://${DOCKER_HOST_IP}/ws
    ```
 
 4. **Rebuild and restart**:
@@ -361,8 +388,8 @@ To access the web application from other devices on your local network (e.g., ph
    ```bash
    DOCKER_HOST_IP=192.168.1.100
    # URLs will automatically resolve using the DOCKER_HOST_IP variable:
-   # ACCORD_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:8080
-   # ACCORD_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:8080/ws
+   # ACCORDION_BACKEND_CLIENT_URL=http://${DOCKER_HOST_IP}:8080
+   # ACCORDION_BACKEND_CLIENT_WS_URL=http://${DOCKER_HOST_IP}:8080/ws
    ```
 
 3. **Update CORS to allow network access**:
@@ -398,10 +425,10 @@ If you change ports and the backend service hangs or the health check fails:
    ```bash
    # In .env file
    SERVER_PORT=9090
-   ACCORD_BACKEND_URL=http://backend:9090
-   ACCORD_BACKEND_WS_URL=http://backend:9090/ws
-   ACCORD_BACKEND_CLIENT_URL=http://localhost:9090
-   ACCORD_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
+   ACCORDION_BACKEND_URL=http://backend:9090
+   ACCORDION_BACKEND_WS_URL=http://backend:9090/ws
+   ACCORDION_BACKEND_CLIENT_URL=http://localhost:9090
+   ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:9090/ws
    ```
 
 2. **Use matching internal/external ports for simplicity**:
@@ -451,6 +478,22 @@ healthcheck:
   start_period: 60s
 ```
 
+Point the probe at a publicly reachable endpoint. `/ws` is permitted anonymously, whereas every
+`/api/**` endpoint other than `/api/users/register` and `/api/users/login` returns `401` to an
+unauthenticated probe and can never report healthy.
+
+### Backend Container Exits Immediately
+
+Check the logs for a missing or unusable signing secret:
+
+```bash
+docker compose logs backend
+```
+
+`JWT_SECRET` is required and has no default. A missing value fails placeholder resolution, and a
+blank or shorter-than-32-byte value is rejected at startup. Set it in `.env` and recreate the
+service with `docker compose up -d`.
+
 ### Build Issues
 
 ```bash
@@ -471,9 +514,10 @@ For development, mount the source code as a volume:
 # Build and run with hot reload (requires spring-boot-devtools)
 docker run -d \
   -p 8080:8080 \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
   -v $(pwd)/backend/src:/app/src \
-  --name accord-backend-dev \
-  accord-backend:latest
+  --name accordion-backend-dev \
+  accordion-backend:latest
 ```
 
 ### Debugging
@@ -485,8 +529,8 @@ docker run -d \
   -p 8080:8080 \
   -p 5005:5005 \
   -e JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005" \
-  --name accord-backend \
-  accord-backend:latest
+  --name accordion-backend \
+  accordion-backend:latest
 ```
 
 Connect your IDE debugger to `localhost:5005`.
@@ -505,12 +549,12 @@ The Dockerfile uses multi-stage builds to create a minimal runtime image:
 
 ```yaml
 - name: Build Docker Image
-  run: docker build -t accord-backend:${{ github.sha }} .
+  run: docker build -t accordion-backend:${{ github.sha }} .
 
 - name: Push to Registry
   run: |
-    docker tag accord-backend:${{ github.sha }} ghcr.io/username/accord-backend:latest
-    docker push ghcr.io/username/accord-backend:latest
+    docker tag accordion-backend:${{ github.sha }} ghcr.io/username/accordion-backend:latest
+    docker push ghcr.io/username/accordion-backend:latest
 ```
 
 ## Additional Resources

@@ -12,11 +12,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.accord</groupId>
-    <artifactId>accord-webapp</artifactId>
+    <groupId>com.accordion</groupId>
+    <artifactId>accordion-webapp</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>Accord Web Application</name>
-    <description>Web frontend for Accord Chat</description>
+    <name>Accordion Web Application</name>
+    <description>Web frontend for Accordion Chat</description>
 
     <properties>
         <java.version>17</java.version>
