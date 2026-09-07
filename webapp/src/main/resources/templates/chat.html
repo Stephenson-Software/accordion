@@ -187,6 +187,48 @@
         .message-time {
             font-size: 0.85em;
             color: #72767d;
+            cursor: help;
+        }
+
+        .message-time:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .date-separator {
+            text-align: center;
+            margin: 24px 0 16px 0;
+            position: relative;
+        }
+
+        .date-separator::before,
+        .date-separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+        }
+
+        .date-separator::before {
+            left: 0;
+        }
+
+        .date-separator::after {
+            right: 0;
+        }
+
+        .date-separator span {
+            background: white;
+            padding: 4px 16px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
         }
 
         .message-content {
@@ -490,6 +532,102 @@
         const TYPING_DEBOUNCE_MS = 2000; // Send typing event every 2 seconds while typing
         const TYPING_TIMEOUT_MS = 3000; // Clear typing indicator after 3 seconds of inactivity
 
+        // Timestamp utilities
+
+        // Parse a timestamp string as UTC. The server sends LocalDateTime without timezone info,
+        // so we append 'Z' to ensure JavaScript interprets the value as UTC rather than local time.
+        function parseTimestamp(timestamp) {
+            if (!timestamp) return new Date(NaN);
+            const str = String(timestamp);
+            // Already has timezone info (Z or +/-offset)
+            if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
+                return new Date(str);
+            }
+            return new Date(str + 'Z');
+        }
+
+        function getRelativeTime(timestamp) {
+            const now = new Date();
+            const messageDate = parseTimestamp(timestamp);
+            const diffMs = now - messageDate;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+
+            if (diffSec < 10) return 'Just now';
+            if (diffSec < 60) return `${diffSec} seconds ago`;
+            if (diffMin === 1) return '1 minute ago';
+            if (diffMin < 60) return `${diffMin} minutes ago`;
+            if (diffHour === 1) return '1 hour ago';
+            if (diffHour < 24) return `${diffHour} hours ago`;
+            if (diffDay === 1) return 'Yesterday';
+            if (diffDay < 7) return `${diffDay} days ago`;
+
+            // For older messages, show date
+            return messageDate.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getFullTimestamp(timestamp) {
+            const date = parseTimestamp(timestamp);
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getDateSeparatorText(timestamp) {
+            const messageDate = parseTimestamp(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            // Reset time parts for comparison
+            const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+            if (messageDateOnly.getTime() === todayOnly.getTime()) {
+                return 'Today';
+            } else if (messageDateOnly.getTime() === yesterdayOnly.getTime()) {
+                return 'Yesterday';
+            } else {
+                return messageDate.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        function shouldShowDateSeparator(currentTimestamp, previousTimestamp) {
+            if (!previousTimestamp) return true;
+
+            const currentDate = parseTimestamp(currentTimestamp);
+            const previousDate = parseTimestamp(previousTimestamp);
+
+            return currentDate.toDateString() !== previousDate.toDateString();
+        }
+
+        // Update all relative timestamps
+        function updateRelativeTimestamps() {
+            document.querySelectorAll('.message-time[data-timestamp]').forEach(timeElement => {
+                const timestamp = timeElement.getAttribute('data-timestamp');
+                timeElement.textContent = getRelativeTime(timestamp);
+            });
+        }
+
+        // Start periodic update of relative times (every 30 seconds)
+        setInterval(updateRelativeTimestamps, 30000);
+
         function connect() {
             const socket = new SockJS(backendWsUrl);
             stompClient = Stomp.over(socket);
@@ -498,7 +636,7 @@
             const headers = {
                 'Authorization': `Bearer ${jwtToken}`
             };
-            
+
             stompClient.connect(headers, onConnected, onError);
         }
 
@@ -570,11 +708,11 @@
                 
                 stompClient.send(`/app/chat.send/${currentChannelId}`, {}, JSON.stringify(chatMessage));
                 messageInput.value = '';
-                
+
                 // Clear typing indicator when message is sent
                 sendTypingIndicator(false);
                 isCurrentlyTyping = false;
-                
+
                 // Clear any pending debounce timer
                 if (typingDebounceTimer) {
                     clearTimeout(typingDebounceTimer);
@@ -591,9 +729,13 @@
                 lastMessage.username === message.username && 
                 lastMessage.content === message.content) {
                 
-                // Find the last message div
-                const lastMessageDiv = messagesDiv.lastElementChild;
-                if (lastMessageDiv && lastMessageDiv.classList.contains('message')) {
+                // Find the last message div (skip date separators)
+                let lastMessageDiv = messagesDiv.lastElementChild;
+                while (lastMessageDiv && lastMessageDiv.classList.contains('date-separator')) {
+                    lastMessageDiv = lastMessageDiv.previousElementSibling;
+                }
+
+                if (lastMessageDiv && lastMessageDiv.classList && lastMessageDiv.classList.contains('message')) {
                     // Increment count in our tracker (always starts at 1, so just increment)
                     lastMessage.count = lastMessage.count + 1;
                     
@@ -616,12 +758,9 @@
                     // Update the timestamp to show the latest occurrence
                     const timeSpan = lastMessageDiv.querySelector('.message-time');
                     if (timeSpan) {
-                        const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        });
-                        timeSpan.textContent = time;
+                        timeSpan.textContent = getRelativeTime(message.timestamp);
+                        timeSpan.setAttribute('data-timestamp', message.timestamp);
+                        timeSpan.setAttribute('title', getFullTimestamp(message.timestamp));
                     }
                     
                     // Scroll to bottom
@@ -630,24 +769,34 @@
                 }
             }
             
+            // Check if we need a date separator
+            const previousMessages = messagesDiv.querySelectorAll('.message');
+            const previousMessage = previousMessages.length > 0 ? previousMessages[previousMessages.length - 1] : null;
+            const previousTimestamp = previousMessage ? previousMessage.getAttribute('data-timestamp') : null;
+
+            if (shouldShowDateSeparator(message.timestamp, previousTimestamp)) {
+                const dateSeparator = document.createElement('div');
+                dateSeparator.className = 'date-separator';
+                dateSeparator.innerHTML = `<span>${getDateSeparatorText(message.timestamp)}</span>`;
+                messagesDiv.appendChild(dateSeparator);
+            }
+
             // Create new message div
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
-            
+            messageDiv.setAttribute('data-timestamp', message.timestamp);
+
             if (message.username === 'System') {
                 messageDiv.classList.add('system');
             }
             
-            const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+            const relativeTime = getRelativeTime(message.timestamp);
+            const fullTimestamp = getFullTimestamp(message.timestamp);
             
             messageDiv.innerHTML = `
                 <div class="message-header">
                     <span class="message-username">${escapeHtml(message.username)}</span>
-                    <span class="message-time">${time}</span>
+                    <span class="message-time" data-timestamp="${message.timestamp}" title="${fullTimestamp}">${relativeTime}</span>
                 </div>
                 <div class="message-content">${escapeHtml(message.content)}</div>
             `;
@@ -730,7 +879,7 @@
             if (typingSubscription) {
                 typingSubscription.unsubscribe();
             }
-            
+
             // Subscribe to new channel messages and typing indicators
             currentSubscription = stompClient.subscribe(`/topic/messages/${channelId}`, onMessageReceived);
             typingSubscription = stompClient.subscribe(`/topic/typing/${channelId}`, onTypingReceived);
@@ -756,11 +905,11 @@
                 clearTimeout(typingDebounceTimer);
                 typingDebounceTimer = null;
             }
-            
+
             // Clear all typing indicator timeouts before clearing the map
             typingUsers.forEach(timeoutId => clearTimeout(timeoutId));
             typingUsers.clear();
-            
+
             // Subscribe to new channel
             subscribeToChannel(channelId);
             
@@ -865,25 +1014,25 @@
 
         function onTypingReceived(payload) {
             const typingIndicator = JSON.parse(payload.body);
-            
+
             // Don't show typing indicator for the current user
             if (typingIndicator.username === username) {
                 return;
             }
-            
+
             if (typingIndicator.typing) {
                 // User started typing
                 // Clear any existing timeout for this user
                 if (typingUsers.has(typingIndicator.username)) {
                     clearTimeout(typingUsers.get(typingIndicator.username));
                 }
-                
+
                 // Set a new timeout to clear this user's typing indicator
                 const timeoutId = setTimeout(() => {
                     typingUsers.delete(typingIndicator.username);
                     updateTypingDisplay();
                 }, TYPING_TIMEOUT_MS);
-                
+
                 typingUsers.set(typingIndicator.username, timeoutId);
                 updateTypingDisplay();
             } else {
@@ -899,7 +1048,7 @@
         function updateTypingDisplay() {
             const typingDiv = document.getElementById('typingIndicator');
             const typingUsernames = Array.from(typingUsers.keys());
-            
+
             if (typingUsernames.length === 0) {
                 typingDiv.innerHTML = '';
             } else if (typingUsernames.length === 1) {
@@ -922,7 +1071,7 @@
 
         function onMessageInputKeyup() {
             const messageInput = document.getElementById('messageInput');
-            
+
             // If input is not empty, send typing indicator
             if (messageInput.value.trim().length > 0) {
                 // Send immediately if not already typing
@@ -930,12 +1079,12 @@
                     sendTypingIndicator(true);
                     isCurrentlyTyping = true;
                 }
-                
+
                 // Clear existing debounce timer
                 if (typingDebounceTimer) {
                     clearTimeout(typingDebounceTimer);
                 }
-                
+
                 // Set timer to send another typing event if still typing
                 // This keeps the indicator alive on the other end
                 typingDebounceTimer = setTimeout(() => {
