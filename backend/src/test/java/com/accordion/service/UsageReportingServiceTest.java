@@ -87,6 +87,7 @@ class UsageReportingServiceTest {
     void disabledSendsNothing() throws Exception {
         UsageReportingService service = new UsageReportingService(false, endpoint, "test-key", "1.0");
         assertFalse(service.isEnabled());
+        assertEquals("USAGE_REPORTING_ENABLED=false", service.disabledReason());
 
         service.reportStartup();
         service.reportChannelCreated();
@@ -100,6 +101,7 @@ class UsageReportingServiceTest {
     void missingKeySendsNothing() throws Exception {
         UsageReportingService service = new UsageReportingService(true, endpoint, "", "1.0");
         assertFalse(service.isEnabled());
+        assertEquals("no key", service.disabledReason());
 
         service.reportStartup();
         service.reportChannelCreated();
@@ -114,6 +116,15 @@ class UsageReportingServiceTest {
         UsageReportingService service = assertDoesNotThrow(
                 () -> new UsageReportingService(true, " ", "test-key", "1.0"));
         assertFalse(service.isEnabled());
+        assertEquals("no endpoint", service.disabledReason());
+        service.close();
+    }
+
+    @Test
+    void enabledServiceHasNoDisabledReason() {
+        UsageReportingService service = new UsageReportingService(true, endpoint, "test-key", "1.0");
+        assertTrue(service.isEnabled());
+        assertNull(service.disabledReason());
         service.close();
     }
 

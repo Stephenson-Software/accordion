@@ -73,7 +73,12 @@ nano .env  # or use your preferred editor
   It sends one `startup` event when ready (program name `accordion` and its version only) and
   one `channel-created` event per channel created (program name only) — nothing about users,
   messages, channel names or the host. Set to `false` to turn it off; the backend logs one
-  INFO line at every start saying whether it is on. See the README's "Usage reporting" section.
+  INFO line at every start saying whether it is on. See the README's "Usage reporting" section
+  and https://github.com/Stephenson-Software/trace#usage-reporting.
+- `TRACE_USAGE_REPORTING`: The switch every trace client honours, checked before
+  `USAGE_REPORTING_ENABLED`; `off` (or `false`, `0`, `no`) turns reporting off (default: unset).
+- `DO_NOT_TRACK`: `1` (or `true`, `yes`) turns reporting off too, per
+  https://consoledonottrack.com (default: unset).
 
 #### Database Configuration (H2)
 - `SPRING_DATASOURCE_URL`: Database connection URL

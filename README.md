@@ -378,29 +378,8 @@ spring.datasource.url=jdbc:h2:mem:chatdb
 spring.h2.console.enabled=true
 ```
 
-### Usage reporting
-
-The backend reports that it is in use to the
-[trace](https://github.com/Stephenson-Software/trace) usage service at
-`https://trace.danielstephenson.dev`, so it is known how many Accordion servers are running
-and on which versions. It sends exactly two kinds of event:
-
-- `startup`, once the backend is ready — the program name (`accordion`) and its version only
-- `channel-created`, each time a channel is created through the API — the program name only
-
-Nothing about users, messages, channel names, the host or its address is ever sent. The send
-happens on its own daemon thread, never throws and never blocks startup; a trace server that is
-unreachable is a dropped report, not an error. Reporting is on by default and the backend logs
-one INFO line at every start saying whether it is on:
-
-```
-Usage reporting is on: accordion sends a startup event (program name and version only) and a channel-created event (program name only) to https://trace.danielstephenson.dev. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled).
-```
-
-To turn it off, set `USAGE_REPORTING_ENABLED=false` in `.env` (Docker Compose) or in the
-backend's environment, or set `usage-reporting.enabled=false` in
-`backend/src/main/resources/application.properties`. `USAGE_REPORTING_ENDPOINT` points it at
-a different trace server. Tests never report.
+The backend also reports that it is in use to the project's usage service; the switch for
+that is `USAGE_REPORTING_ENABLED` — see [Usage reporting](#usage-reporting).
 
 ### Frontend
 
@@ -439,6 +418,36 @@ See [MVP.md](MVP.md) for the complete roadmap and architecture details.
   - Setup instructions
   - Feature roadmap
   - Troubleshooting guide
+
+## Usage reporting
+
+Usage reporting is on by default: the backend reports that it is in use to the
+[trace](https://github.com/Stephenson-Software/trace) usage service at
+`https://trace.danielstephenson.dev`, so it is known how many Accordion servers are running
+and on which versions, and it sends exactly two kinds of event — `startup`, once the backend
+is ready (the program name `accordion` and its version), and `channel-created`, each time a
+channel is created through the API (the program name only). Nothing else is sent: nothing
+about users, messages, channel names, IP addresses, the host, or anything typed into a
+channel. The send happens on its own daemon thread, never throws and never blocks startup; a
+trace server that is unreachable is a dropped report, not an error. The backend logs one INFO
+line at every start saying whether reporting is on and, if not, why:
+
+```
+Usage reporting is on: accordion sends its name and version (a startup event) and a channel-created event (name only) to https://trace.danielstephenson.dev - nothing about users, messages, channels or the server. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the environment. Details: https://github.com/Stephenson-Software/trace#usage-reporting
+```
+
+To turn it off, any one of these is enough:
+
+- `USAGE_REPORTING_ENABLED=false` in `.env` (Docker Compose) or in the backend's environment
+- `usage-reporting.enabled=false` in `backend/src/main/resources/application.properties`
+- `TRACE_USAGE_REPORTING=off` (also `false`, `0`, `no`) in the environment — the switch every
+  trace client honours, checked before the backend's own setting
+- `DO_NOT_TRACK=1` (also `true`, `yes`) in the environment, per
+  [consoledonottrack.com](https://consoledonottrack.com)
+
+`USAGE_REPORTING_ENDPOINT` points it at a different trace server. Tests never report.
+
+Details on what trace collects and why: https://github.com/Stephenson-Software/trace#usage-reporting
 
 ## Contributing
 
