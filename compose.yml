@@ -48,8 +48,12 @@ services:
       - APP_PASSWORD_MIN_LENGTH=${APP_PASSWORD_MIN_LENGTH:-8}
 
       # Usage reporting to trace (a startup event and a channel-created event, program name
-      # and version only; see README). On by default; USAGE_REPORTING_ENABLED=false turns it off.
+      # and version only; see README). On by default; USAGE_REPORTING_ENABLED=false or
+      # TRACE_USAGE_REPORTING=off turns it off (DO_NOT_TRACK=1 too).
+      # Details: https://github.com/Stephenson-Software/trace#usage-reporting
       - USAGE_REPORTING_ENABLED=${USAGE_REPORTING_ENABLED:-true}
+      - TRACE_USAGE_REPORTING=${TRACE_USAGE_REPORTING:-}
+      - DO_NOT_TRACK=${DO_NOT_TRACK:-}
     
     volumes:
       - h2_data:/app/data
