@@ -390,7 +390,7 @@ milliseconds (default `86400000`, i.e. 24 hours).
 - [ ] Private direct messages
 - [ ] User online/offline status
 - [x] Typing indicators (web application; not yet in the desktop client)
-- [x] Message timestamps in UI (web application; relative times and date separators still outstanding)
+- [x] Message timestamps in UI (relative times, date separators, and periodic refresh in both the web application and the desktop client)
 - [ ] User list panel
 
 ### Phase 3: Advanced Features
@@ -443,7 +443,7 @@ mvn clean package
 
 ### Frontend Testing
 
-The LibGDX modules have no test sources either — `./gradlew test` reports
+The LibGDX modules have no test sources — `./gradlew test` reports
 `NO-SOURCE` and executes nothing. Use the build task as a compile check:
 
 ```bash

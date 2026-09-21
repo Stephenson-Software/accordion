@@ -218,12 +218,13 @@ docker run -d \
 # Build the webapp image
 docker build -t accordion-webapp:latest -f Dockerfile.webapp .
 
-# Run the container (requires backend to be running)
+# Run the container (requires backend to be running and reachable from the browser;
+# the webapp server itself never calls the backend, so the URLs are the ones the
+# browser will use)
 docker run -d \
   -p 3000:3000 \
-  -e ACCORDION_BACKEND_URL=http://backend:8080 \
-  -e ACCORDION_BACKEND_WS_URL=ws://backend:8080/ws \
-  --link accordion-backend:backend \
+  -e ACCORDION_BACKEND_CLIENT_URL=http://localhost:8080 \
+  -e ACCORDION_BACKEND_CLIENT_WS_URL=http://localhost:8080/ws \
   --name accordion-webapp \
   accordion-webapp:latest
 ```
