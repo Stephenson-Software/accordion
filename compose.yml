@@ -83,12 +83,9 @@ services:
       - SPRING_APPLICATION_NAME=${WEBAPP_SPRING_APPLICATION_NAME:-accordion-webapp}
       - SERVER_PORT=${WEBAPP_SERVER_PORT:-3000}
       
-      # Backend configuration (server-side, internal Docker network)
-      # Use service name for internal communication
-      - ACCORDION_BACKEND_URL=${ACCORDION_BACKEND_URL:-http://backend:8080}
-      - ACCORDION_BACKEND_WS_URL=${ACCORDION_BACKEND_WS_URL:-http://backend:8080/ws}
-      
       # Backend configuration (client-side, browser access)
+      # The webapp server never calls the backend itself; only browser JavaScript does,
+      # so these are the only backend URLs it needs.
       # Must be accessible from the user's browser
       # Use DOCKER_HOST_IP variable for flexible network access
       # For local development: localhost

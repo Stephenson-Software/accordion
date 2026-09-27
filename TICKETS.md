@@ -391,8 +391,8 @@ Backend coverage lives in
 
 **Dependencies:** TICKET-101 (Multiple Channels)
 
-### [PLANNED] TICKET-106: Enhanced Message Timestamps in UI
-**Status:** [PLANNED] Planned  
+### [COMPLETED] TICKET-106: Enhanced Message Timestamps in UI
+**Status:** [COMPLETED]  
 **Priority:** P2  
 **Component:** Frontend
 
@@ -400,12 +400,19 @@ Backend coverage lives in
 Improve timestamp display in the UI with relative times and formatting.
 
 **Acceptance Criteria:**
-- [ ] Display timestamps in "Just now", "5 minutes ago" format
-- [ ] Show full timestamp on hover
-- [ ] Add date separators (e.g., "Today", "Yesterday", "May 10")
-- [ ] Format timestamps based on locale
-- [ ] Update relative times periodically
-- [ ] Test across different timezones
+- [x] Display timestamps in "Just now", "5 minutes ago" format
+- [x] Show full timestamp on hover
+- [x] Add date separators (e.g., "Today", "Yesterday", "May 10")
+- [x] Format timestamps based on locale
+- [x] Update relative times periodically
+- [ ] Test across different timezones — the timezone bug (server `LocalDateTime` read as browser-local time) is fixed by serializing ISO-8601 and parsing as UTC, and `backend/src/test/java/com/accordion/config/JacksonConfigTest.java` covers the serialization, but no automated test runs the UI under more than one timezone
+
+**Note:** The web application (`webapp/src/main/resources/templates/chat.html`) renders
+relative times, a full timestamp on hover, date separators, and locale-formatted dates,
+and refreshes relative times every 30 seconds. The LibGDX desktop client renders the same
+relative times and date separators via
+`frontend/core/src/com/accordion/util/TimeUtils.java` and refreshes them periodically,
+but shows no full timestamp on hover.
 
 **Estimated Effort:** 1-2 days
 
