@@ -427,7 +427,7 @@ Usage reporting is on by default: the backend reports that it is in use to the
 `https://trace.danielstephenson.dev`, so it is known how many Accordion servers are running
 and on which versions, and it sends exactly two kinds of event — `startup`, once the backend
 is ready (the program name `accordion` and its version), and `channel-created`, each time a
-channel is created through the API (the program name only). Nothing else is sent: nothing
+channel is created through the API (the program name and its version). Nothing else is sent: nothing
 about users, messages, channel names, IP addresses, the host, or anything typed into a
 channel. The send happens on its own daemon thread, never throws and never blocks startup; a
 trace server that is unreachable is a dropped report, not an error. The backend logs one INFO

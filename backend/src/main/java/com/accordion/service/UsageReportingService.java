@@ -9,17 +9,13 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * Reports that this Accordion backend is in use to the
  * <a href="https://github.com/Stephenson-Software/trace">trace</a> usage service.
  *
  * <p>Two events are sent, and nothing else: {@code startup} once the application is ready to
  * serve requests, and {@code channel-created} each time a channel is created through the API.
- * Each carries only the program name ({@code accordion}) and, on {@code startup}, the backend
- * version. Nothing about users, messages, channel names or the host is ever included.
+ * Each carries only the program name ({@code accordion}) and the backend version. Nothing about users, messages, channel names or the host is ever included.
  *
  * <p>Every call returns immediately and never throws: the HTTP request runs on the vendored
  * client's own daemon thread, at most 256 reports wait to be sent before new ones are dropped,
@@ -56,10 +52,10 @@ public class UsageReportingService {
             @Value("${accordion.version:unknown}") String version) {
         this.version = version == null || version.isBlank() ? "unknown" : version;
         this.endpointMissing = endpoint == null || endpoint.isBlank();
-        this.client = buildClient(enabled, endpointMissing ? null : endpoint, key);
+        this.client = buildClient(enabled, endpointMissing ? null : endpoint, key, this.version);
         if (client.isEnabled()) {
-            log.info("Usage reporting is on: accordion sends its name and version (a startup event) and"
-                    + " a channel-created event (name only) to {} - nothing about users, messages,"
+            log.info("Usage reporting is on: accordion sends its name and version with a startup event"
+                    + " and a channel-created event to {} - nothing about users, messages,"
                     + " channels or the server. Turn it off with USAGE_REPORTING_ENABLED=false"
                     + " (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the"
                     + " environment. Details: {}", endpoint, DETAILS_URL);
@@ -95,9 +91,9 @@ public class UsageReportingService {
      * the one thing the builder refuses outright, so it is replaced by an unreachable
      * placeholder and the client disabled; {@link #disabledReason()} names it.
      */
-    private static TraceClient buildClient(boolean enabled, String endpoint, String key) {
+    private static TraceClient buildClient(boolean enabled, String endpoint, String key, String version) {
         boolean endpointMissing = endpoint == null;
-        return TraceClient.builder(endpointMissing ? "http://disabled.invalid" : endpoint, APPLICATION)
+        return TraceClient.builder(endpointMissing ? "http://disabled.invalid" : endpoint, APPLICATION, version)
                 .key(key)
                 .enabled(enabled && !endpointMissing)
                 .logger(java.util.logging.Logger.getLogger(UsageReportingService.class.getName()))
@@ -109,15 +105,10 @@ public class UsageReportingService {
         return client.isEnabled();
     }
 
-    /** The tags attached to the startup event: the backend version, nothing else. */
-    Map<String, String> startupTags() {
-        return Collections.singletonMap("version", version);
-    }
-
     /** Sends the one {@code startup} event once the application is ready to serve requests. */
     @EventListener(ApplicationReadyEvent.class)
     public void reportStartup() {
-        client.report(STARTUP_EVENT, null, startupTags());
+        client.report(STARTUP_EVENT);
     }
 
     /** Sends a {@code channel-created} event. The channel itself is not described. */
