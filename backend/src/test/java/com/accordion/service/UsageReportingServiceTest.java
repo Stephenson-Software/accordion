@@ -64,22 +64,27 @@ class UsageReportingServiceTest {
     }
 
     @Test
-    void channelCreatedEventCarriesProgramNameOnly() throws Exception {
+    void channelCreatedEventCarriesProgramNameAndVersionOnly() throws Exception {
         UsageReportingService service = new UsageReportingService(true, endpoint, "test-key", "1.0");
 
         service.reportChannelCreated();
 
         assertTrue(arrived.await(5, TimeUnit.SECONDS), "channel-created event was not delivered");
         assertEquals(1, bodies.size());
-        assertEquals("{\"application\":\"accordion\",\"name\":\"channel-created\"}", bodies.get(0));
+        assertEquals("{\"application\":\"accordion\",\"name\":\"channel-created\","
+                + "\"tags\":{\"version\":\"1.0\"}}", bodies.get(0));
         service.close();
     }
 
     @Test
-    void blankVersionIsReportedAsUnknown() {
-        UsageReportingService service = new UsageReportingService(false, endpoint, "k", " ");
-        assertEquals("unknown", service.startupTags().get("version"));
-        assertEquals(1, service.startupTags().size());
+    void blankVersionIsReportedAsUnknown() throws Exception {
+        UsageReportingService service = new UsageReportingService(true, endpoint, "k", " ");
+
+        service.reportStartup();
+
+        assertTrue(arrived.await(5, TimeUnit.SECONDS), "startup event was not delivered");
+        assertEquals("{\"application\":\"accordion\",\"name\":\"startup\","
+                + "\"tags\":{\"version\":\"unknown\"}}", bodies.get(0));
         service.close();
     }
 

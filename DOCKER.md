@@ -71,7 +71,7 @@ nano .env  # or use your preferred editor
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
   [trace](https://github.com/Stephenson-Software/trace) usage service (default: `true`).
   It sends one `startup` event when ready (program name `accordion` and its version only) and
-  one `channel-created` event per channel created (program name only) — nothing about users,
+  one `channel-created` event per channel created (program name and version only) — nothing about users,
   messages, channel names or the host. Set to `false` to turn it off; the backend logs one
   INFO line at every start saying whether it is on. See the README's "Usage reporting" section
   and https://github.com/Stephenson-Software/trace#usage-reporting.
