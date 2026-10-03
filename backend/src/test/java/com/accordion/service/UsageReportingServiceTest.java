@@ -49,6 +49,17 @@ class UsageReportingServiceTest {
     }
 
     @Test
+    void carriesARandomInstallationIdOnlyWhileReportingIsOn() {
+        UsageReportingService on = new UsageReportingService(true, endpoint, "test-key", "1.0");
+        UsageReportingService off = new UsageReportingService(false, endpoint, "test-key", "1.0");
+
+        assertNotNull(on.installId(), "an enabled client carries a random installation ID");
+        assertNull(off.installId(), "a disabled client never makes up an ID");
+        on.close();
+        off.close();
+    }
+
+    @Test
     void startupEventCarriesProgramNameAndVersionOnly() throws Exception {
         UsageReportingService service = new UsageReportingService(true, endpoint, "test-key", "9.9.9-TEST");
         assertTrue(service.isEnabled());
@@ -58,7 +69,7 @@ class UsageReportingServiceTest {
         assertTrue(arrived.await(5, TimeUnit.SECONDS), "startup event was not delivered");
         assertEquals(1, bodies.size());
         assertEquals("{\"application\":\"accordion\",\"name\":\"startup\","
-                + "\"tags\":{\"version\":\"9.9.9-TEST\"}}", bodies.get(0));
+                + "\"tags\":{\"version\":\"9.9.9-TEST\",\"install\":\"" + service.installId() + "\"}}", bodies.get(0));
         assertEquals("Bearer test-key", authorizations.get(0));
         service.close();
     }
@@ -72,7 +83,7 @@ class UsageReportingServiceTest {
         assertTrue(arrived.await(5, TimeUnit.SECONDS), "channel-created event was not delivered");
         assertEquals(1, bodies.size());
         assertEquals("{\"application\":\"accordion\",\"name\":\"channel-created\","
-                + "\"tags\":{\"version\":\"1.0\"}}", bodies.get(0));
+                + "\"tags\":{\"version\":\"1.0\",\"install\":\"" + service.installId() + "\"}}", bodies.get(0));
         service.close();
     }
 
@@ -84,7 +95,7 @@ class UsageReportingServiceTest {
 
         assertTrue(arrived.await(5, TimeUnit.SECONDS), "startup event was not delivered");
         assertEquals("{\"application\":\"accordion\",\"name\":\"startup\","
-                + "\"tags\":{\"version\":\"unknown\"}}", bodies.get(0));
+                + "\"tags\":{\"version\":\"unknown\",\"install\":\"" + service.installId() + "\"}}", bodies.get(0));
         service.close();
     }
 
