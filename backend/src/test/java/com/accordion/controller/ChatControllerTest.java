@@ -17,9 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -225,7 +223,7 @@ class ChatControllerTest {
             () -> chatController.userJoin(payload("a".repeat(51), null)));
 
         assertEquals("The 'username' field must be valid", ex.getMessage());
-        verify(chatService, never()).saveMessage(anyString(), anyString(), any());
+        verifyNoInteractions(chatService);
     }
 
     // --- /chat.join/{channelId} ---
