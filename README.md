@@ -434,8 +434,18 @@ trace server that is unreachable is a dropped report, not an error. The backend 
 line at every start saying whether reporting is on and, if not, why:
 
 ```
-Usage reporting is on: accordion sends its name and version (a startup event) and a channel-created event (name only) to https://trace.danielstephenson.dev - nothing about users, messages, channels or the server. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the environment. Details: https://github.com/Stephenson-Software/trace#usage-reporting
+Usage reporting is on: accordion sends its name, version and a random installation ID with a startup event and a channel-created event to https://trace.danielstephenson.dev - nothing about users, messages or channels. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the environment. Details: https://github.com/Stephenson-Software/trace#usage-reporting
 ```
+
+Every event also carries a random installation ID as the tag `install`, so the number of
+running deployments can be counted rather than events. It is the value of `TRACE_INSTALL_ID`
+when that is set (to pin one ID per deployment), and otherwise a random UUID written the first
+time reporting runs to `<user data dir>/accordion/trace-install-id` (`$XDG_DATA_HOME` or
+`~/.local/share` on Linux, `~/Library/Application Support` on macOS, `%APPDATA%` on Windows)
+and reused after that. In a container that directory is usually not on a volume, so a recreated
+container counts as a new installation unless `TRACE_INSTALL_ID` is set. The ID identifies no
+person, account, host or address; delete the file to get a new one. Every opt-out also stops
+it: when reporting is off, no ID is made up and the file is neither read nor written.
 
 To turn it off, any one of these is enough:
 

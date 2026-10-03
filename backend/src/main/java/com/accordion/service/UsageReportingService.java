@@ -1,6 +1,7 @@
 package com.accordion.service;
 
 import com.accordion.trace.TraceClient;
+import com.accordion.trace.TraceInstallId;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,9 +55,9 @@ public class UsageReportingService {
         this.endpointMissing = endpoint == null || endpoint.isBlank();
         this.client = buildClient(enabled, endpointMissing ? null : endpoint, key, this.version);
         if (client.isEnabled()) {
-            log.info("Usage reporting is on: accordion sends its name and version with a startup event"
-                    + " and a channel-created event to {} - nothing about users, messages,"
-                    + " channels or the server. Turn it off with USAGE_REPORTING_ENABLED=false"
+            log.info("Usage reporting is on: accordion sends its name, version and a random installation"
+                    + " ID with a startup event and a channel-created event to {} - nothing about users,"
+                    + " messages or channels. Turn it off with USAGE_REPORTING_ENABLED=false"
                     + " (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the"
                     + " environment. Details: {}", endpoint, DETAILS_URL);
         } else {
@@ -96,6 +97,8 @@ public class UsageReportingService {
         return TraceClient.builder(endpointMissing ? "http://disabled.invalid" : endpoint, APPLICATION, version)
                 .key(key)
                 .enabled(enabled && !endpointMissing)
+                .installId(TraceInstallId.fromEnvironment())
+                .installIdFile(TraceInstallId.file(APPLICATION))
                 .logger(java.util.logging.Logger.getLogger(UsageReportingService.class.getName()))
                 .build();
     }
@@ -103,6 +106,11 @@ public class UsageReportingService {
     /** Whether reports will actually be sent (false when disabled or without a key). */
     public boolean isEnabled() {
         return client.isEnabled();
+    }
+
+    /** The random installation ID sent as the tag {@code install}, or null while reporting is off. */
+    public String installId() {
+        return client.installId();
     }
 
     /** Sends the one {@code startup} event once the application is ready to serve requests. */
