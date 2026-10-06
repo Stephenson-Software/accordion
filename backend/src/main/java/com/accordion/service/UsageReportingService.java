@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Reports that this Accordion backend is in use to the
- * <a href="https://github.com/Stephenson-Software/trace">trace</a> usage service.
+ * <a href="https://danielstephenson.dev/usage-reporting">trace</a> usage service.
  *
  * <p>Two events are sent, and nothing else: {@code startup} once the application is ready to
  * serve requests, and {@code channel-created} each time a channel is created through the API.
@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
  * client honours, {@code TRACE_USAGE_REPORTING=off} and {@code DO_NOT_TRACK=1}, which the
  * client checks before anything this service passes it; one INFO line at every start says
  * which it is and, when off, why. Details:
- * https://github.com/Stephenson-Software/trace#usage-reporting
+ * https://danielstephenson.dev/usage-reporting
  */
 @Service
 public class UsageReportingService {
@@ -38,7 +38,7 @@ public class UsageReportingService {
     static final String STARTUP_EVENT = "startup";
     static final String CHANNEL_CREATED_EVENT = "channel-created";
     /** The public page describing what trace collects and every way to turn it off. */
-    static final String DETAILS_URL = "https://github.com/Stephenson-Software/trace#usage-reporting";
+    static final String DETAILS_URL = "https://danielstephenson.dev/usage-reporting";
     /** Logged reason when {@code USAGE_REPORTING_ENDPOINT} is blank, which the client itself rejects. */
     static final String REASON_NO_ENDPOINT = "no endpoint";
 

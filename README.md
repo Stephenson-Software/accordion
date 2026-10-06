@@ -172,7 +172,7 @@ cp sample.env .env
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
 - `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
-  [trace](https://github.com/Stephenson-Software/trace) usage service (default: `true`; see
+  [trace](https://danielstephenson.dev/usage-reporting) usage service (default: `true`; see
   [Usage reporting](#usage-reporting))
 
 See `sample.env` for the complete list of configurable options.
@@ -423,7 +423,7 @@ See [MVP.md](MVP.md) for the complete roadmap and architecture details.
 ## Usage reporting
 
 Usage reporting is on by default: the backend reports that it is in use to the
-[trace](https://github.com/Stephenson-Software/trace) usage service at
+[trace](https://danielstephenson.dev/usage-reporting) usage service at
 `https://trace.danielstephenson.dev`, so it is known how many Accordion servers are running
 and on which versions, and it sends exactly two kinds of event — `startup`, once the backend
 is ready (the program name `accordion` and its version), and `channel-created`, each time a
@@ -434,7 +434,7 @@ trace server that is unreachable is a dropped report, not an error. The backend 
 line at every start saying whether reporting is on and, if not, why:
 
 ```
-Usage reporting is on: accordion sends its name, version and a random installation ID with a startup event and a channel-created event to https://trace.danielstephenson.dev - nothing about users, messages or channels. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the environment. Details: https://github.com/Stephenson-Software/trace#usage-reporting
+Usage reporting is on: accordion sends its name, version and a random installation ID with a startup event and a channel-created event to https://trace.danielstephenson.dev - nothing about users, messages or channels. Turn it off with USAGE_REPORTING_ENABLED=false (usage-reporting.enabled), or with TRACE_USAGE_REPORTING=off in the environment. Details: https://danielstephenson.dev/usage-reporting
 ```
 
 Every event also carries a random installation ID as the tag `install`, so the number of
@@ -458,7 +458,7 @@ To turn it off, any one of these is enough:
 
 `USAGE_REPORTING_ENDPOINT` points it at a different trace server. Tests never report.
 
-Details on what trace collects and why: https://github.com/Stephenson-Software/trace#usage-reporting
+Details on what trace collects and why: https://danielstephenson.dev/usage-reporting
 
 ## Contributing
 
