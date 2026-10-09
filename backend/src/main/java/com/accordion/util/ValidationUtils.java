@@ -12,7 +12,7 @@ public class ValidationUtils {
     private static final Pattern PASSWORD_COMPLEXITY_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$");
     
     /**
-     * Validates a username accordioning to application rules.
+     * Validates a username according to application rules.
      * 
      * @param username the username to validate
      * @param minLength minimum allowed length
@@ -31,7 +31,7 @@ public class ValidationUtils {
     }
     
     /**
-     * Validates a password accordioning to security requirements.
+     * Validates a password according to security requirements.
      * Must be at least minLength characters and contain uppercase, lowercase, and digit.
      * 
      * @param password the password to validate
