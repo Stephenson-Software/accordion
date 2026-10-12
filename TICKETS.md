@@ -308,8 +308,10 @@ Implement password-based authentication with Spring Security for secure user acc
 ticket is considered complete without it. The LibGDX desktop client has not been
 updated for this authentication model and cannot connect to the backend as a
 result — that gap is tracked separately, not by this ticket. Coverage lives in
-`backend/src/test/java/com/accordion/security/SecurityConfigIntegrationTest.java`
-and `backend/src/test/java/com/accordion/controller/UserControllerTest.java`.
+`backend/src/test/java/com/accordion/security/SecurityConfigIntegrationTest.java`,
+`backend/src/test/java/com/accordion/controller/UserControllerTest.java`, and, for the
+STOMP `CONNECT` check that protects WebSocket connections,
+`backend/src/test/java/com/accordion/security/WebSocketAuthInterceptorTest.java`.
 
 **Estimated Effort:** 3-4 days
 
