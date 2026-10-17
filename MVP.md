@@ -210,6 +210,7 @@ accordion-prototype/
 │       │   │   ├── AccordionApplication.java
 │       │   │   ├── config/
 │       │   │   │   ├── DataInitializer.java
+│       │   │   │   ├── JacksonConfig.java
 │       │   │   │   ├── SecurityConfig.java
 │       │   │   │   └── WebSocketConfig.java
 │       │   │   ├── controller/
@@ -240,7 +241,8 @@ accordion-prototype/
 │       │   │   │   ├── UsageReportingService.java
 │       │   │   │   └── UserService.java
 │       │   │   ├── trace/
-│       │   │   │   └── TraceClient.java   # vendored trace-client-java
+│       │   │   │   ├── TraceClient.java   # vendored trace-client-java
+│       │   │   │   └── TraceInstallId.java
 │       │   │   └── util/
 │       │   │       └── ValidationUtils.java
 │       │   └── resources/
@@ -271,6 +273,8 @@ accordion-prototype/
     │       ├── screen/
     │       │   ├── LoginScreen.java
     │       │   └── ChatScreen.java
+    │       ├── util/
+    │       │   └── TimeUtils.java
     │       └── websocket/
     │           └── ChatWebSocketClient.java
     └── desktop/                   # Desktop launcher
