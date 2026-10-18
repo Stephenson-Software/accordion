@@ -2,6 +2,17 @@
 
 **Accordion Chat MVP** - A self-hosted real-time chat application with Spring Boot WebSocket backend and LibGDX frontend.
 
+<p align="center">
+  <img src="docs/images/two-users-chat.gif" alt="Two browser windows side by side, signed in as alice and bob in the #general channel; each message typed in one window appears in the other straight away" width="760">
+</p>
+<p align="center"><em>The web app: two users chatting in real time, with a second channel in the sidebar.</em></p>
+
+<p align="center">
+  <img src="docs/images/register.png" alt="The sign-in card in registration mode, with the username and password requirements listed underneath" width="380">
+</p>
+
+<sub>How these were captured: the backend and web app jars were built and run locally (in-memory H2, backend JVM in UTC as in the Docker image, usage reporting off), two made-up accounts were registered through the web app, a <code>game-night</code> channel was created through the REST API, and the two browser windows were driven and screenshotted with headless Chromium (Playwright) on 2026-10-18.</sub>
+
 ## Overview
 
 Accordion is a Discord-like self-hosted chat application designed for simplicity and extensibility. This MVP demonstrates core chat functionality with **multiple chat rooms/channels**, password-based authentication, and real-time messaging.
