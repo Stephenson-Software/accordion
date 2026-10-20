@@ -387,7 +387,10 @@ Show typing indicators when users are composing messages in a channel.
 (`webapp/src/main/resources/templates/chat.html`). The LibGDX desktop client has no
 typing-indicator support; desktop parity is tracked separately, not by this ticket.
 Backend coverage lives in
-`backend/src/test/java/com/accordion/controller/TypingIndicatorTest.java`.
+`backend/src/test/java/com/accordion/controller/TypingIndicatorTest.java` (the
+`/app/chat.typing` handler) and
+`backend/src/test/java/com/accordion/model/TypingIndicatorTest.java` (the broadcast
+payload's JSON shape).
 
 **Estimated Effort:** 1-2 days
 
