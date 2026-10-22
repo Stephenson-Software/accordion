@@ -70,9 +70,9 @@ nano .env  # or use your preferred editor
 #### Usage Reporting
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
   [trace](https://danielstephenson.dev/usage-reporting) usage service (default: `true`).
-  It sends one `startup` event when ready (program name `accordion` and its version only) and
-  one `channel-created` event per channel created (program name and version only) — nothing about users,
-  messages, channel names or the host. Set to `false` to turn it off; the backend logs one
+  It sends one `startup` event when ready and one `channel-created` event per channel created,
+  each carrying only the program name `accordion`, its version and a random installation ID —
+  nothing about users, messages, channel names or the host. Set to `false` to turn it off; the backend logs one
   INFO line at every start saying whether it is on. See the README's "Usage reporting" section
   and https://danielstephenson.dev/usage-reporting.
 - `TRACE_USAGE_REPORTING`: The switch every trace client honours, checked before
@@ -226,6 +226,11 @@ docker run -d \
 | `APP_MESSAGE_MAX_LENGTH` | `1000` | Maximum message content length |
 | `SPRING_JPA_SHOW_SQL` | `false` | Show SQL queries in logs |
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
+| `USAGE_REPORTING_ENABLED` | `true` | Report `startup` and `channel-created` events to the trace usage service; `false` turns it off |
+| `USAGE_REPORTING_ENDPOINT` | `https://trace.danielstephenson.dev` | Trace server that usage reports are sent to |
+| `TRACE_USAGE_REPORTING` | *(unset)* | `off` (or `false`, `0`, `no`) turns usage reporting off; checked before `USAGE_REPORTING_ENABLED` |
+| `DO_NOT_TRACK` | *(unset)* | `1` (or `true`, `yes`) turns usage reporting off |
+| `TRACE_INSTALL_ID` | *(unset)* | Pins the installation ID sent with usage reports; without it a random ID is stored in the container's user data directory, which is lost when the container is recreated |
 
 ## Health Checks
 
