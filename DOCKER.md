@@ -79,6 +79,11 @@ nano .env  # or use your preferred editor
   `USAGE_REPORTING_ENABLED`; `off` (or `false`, `0`, `no`) turns reporting off (default: unset).
 - `DO_NOT_TRACK`: `1` (or `true`, `yes`) turns reporting off too, per
   https://consoledonottrack.com (default: unset).
+- `USAGE_REPORTING_ENDPOINT`: Trace server that usage reports are sent to
+  (default: `https://trace.danielstephenson.dev`).
+- `TRACE_INSTALL_ID`: Pins the installation ID sent with usage reports (default: unset — a
+  random ID is stored in the container's user data directory, which is lost when the container
+  is recreated).
 
 #### Database Configuration (H2)
 - `SPRING_DATASOURCE_URL`: Database connection URL

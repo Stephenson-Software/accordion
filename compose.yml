@@ -47,13 +47,16 @@ services:
       - APP_USERNAME_MIN_LENGTH=${APP_USERNAME_MIN_LENGTH:-3}
       - APP_PASSWORD_MIN_LENGTH=${APP_PASSWORD_MIN_LENGTH:-8}
 
-      # Usage reporting to trace (a startup event and a channel-created event, program name
-      # and version only; see README). On by default; USAGE_REPORTING_ENABLED=false or
-      # TRACE_USAGE_REPORTING=off turns it off (DO_NOT_TRACK=1 too).
+      # Usage reporting to trace (a startup event and a channel-created event, each carrying
+      # the program name, version and a random installation ID; see README). On by default;
+      # USAGE_REPORTING_ENABLED=false or TRACE_USAGE_REPORTING=off turns it off (DO_NOT_TRACK=1
+      # too). TRACE_INSTALL_ID pins the installation ID across container recreation.
       # Details: https://danielstephenson.dev/usage-reporting
       - USAGE_REPORTING_ENABLED=${USAGE_REPORTING_ENABLED:-true}
+      - USAGE_REPORTING_ENDPOINT=${USAGE_REPORTING_ENDPOINT:-https://trace.danielstephenson.dev}
       - TRACE_USAGE_REPORTING=${TRACE_USAGE_REPORTING:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
+      - TRACE_INSTALL_ID=${TRACE_INSTALL_ID:-}
     
     volumes:
       - h2_data:/app/data
