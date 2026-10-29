@@ -310,7 +310,10 @@ updated for this authentication model and cannot connect to the backend as a
 result — that gap is tracked separately, not by this ticket. Coverage lives in
 `backend/src/test/java/com/accordion/security/SecurityConfigIntegrationTest.java`,
 `backend/src/test/java/com/accordion/controller/UserControllerTest.java`, the
-request/response payload tests under `backend/src/test/java/com/accordion/dto/`, and, for the
+request/response payload tests under `backend/src/test/java/com/accordion/dto/`, the
+bearer-token filter and user lookup tests
+(`backend/src/test/java/com/accordion/security/JwtAuthenticationFilterTest.java` and
+`CustomUserDetailsServiceTest.java` beside it), and, for the
 STOMP `CONNECT` check that protects WebSocket connections,
 `backend/src/test/java/com/accordion/security/WebSocketAuthInterceptorTest.java`.
 
