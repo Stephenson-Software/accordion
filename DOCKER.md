@@ -81,6 +81,9 @@ nano .env  # or use your preferred editor
   https://consoledonottrack.com (default: unset).
 - `USAGE_REPORTING_ENDPOINT`: Trace server that usage reports are sent to
   (default: `https://trace.danielstephenson.dev`).
+- `USAGE_REPORTING_KEY`: Key sent with usage reports (default: the key built into
+  `application.properties`, also used when the variable is empty). Only needed when
+  `USAGE_REPORTING_ENDPOINT` points at a trace server that expects a different key.
 - `TRACE_INSTALL_ID`: Pins the installation ID sent with usage reports (default: unset — a
   random ID is stored in the container's user data directory, which is lost when the container
   is recreated).
@@ -233,6 +236,7 @@ docker run -d \
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
 | `USAGE_REPORTING_ENABLED` | `true` | Report `startup` and `channel-created` events to the trace usage service; `false` turns it off |
 | `USAGE_REPORTING_ENDPOINT` | `https://trace.danielstephenson.dev` | Trace server that usage reports are sent to |
+| `USAGE_REPORTING_KEY` | *(built-in key)* | Key sent with usage reports; set it for a trace server that expects a different key |
 | `TRACE_USAGE_REPORTING` | *(unset)* | `off` (or `false`, `0`, `no`) turns usage reporting off; checked before `USAGE_REPORTING_ENABLED` |
 | `DO_NOT_TRACK` | *(unset)* | `1` (or `true`, `yes`) turns usage reporting off |
 | `TRACE_INSTALL_ID` | *(unset)* | Pins the installation ID sent with usage reports; without it a random ID is stored in the container's user data directory, which is lost when the container is recreated |
