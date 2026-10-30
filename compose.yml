@@ -51,9 +51,11 @@ services:
       # the program name, version and a random installation ID; see README). On by default;
       # USAGE_REPORTING_ENABLED=false or TRACE_USAGE_REPORTING=off turns it off (DO_NOT_TRACK=1
       # too). TRACE_INSTALL_ID pins the installation ID across container recreation.
+      # USAGE_REPORTING_KEY, unset or empty, falls back to the key in application.properties.
       # Details: https://danielstephenson.dev/usage-reporting
       - USAGE_REPORTING_ENABLED=${USAGE_REPORTING_ENABLED:-true}
       - USAGE_REPORTING_ENDPOINT=${USAGE_REPORTING_ENDPOINT:-https://trace.danielstephenson.dev}
+      - USAGE_REPORTING_KEY=${USAGE_REPORTING_KEY:-9FLv2WEcLl_qzS75yfU__up46jP5NnxDM7THjr9wMEc}
       - TRACE_USAGE_REPORTING=${TRACE_USAGE_REPORTING:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - TRACE_INSTALL_ID=${TRACE_INSTALL_ID:-}

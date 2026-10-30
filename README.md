@@ -467,7 +467,8 @@ To turn it off, any one of these is enough:
 - `DO_NOT_TRACK=1` (also `true`, `yes`) in the environment, per
   [consoledonottrack.com](https://consoledonottrack.com)
 
-`USAGE_REPORTING_ENDPOINT` points it at a different trace server. Tests never report.
+`USAGE_REPORTING_ENDPOINT` points it at a different trace server, and `USAGE_REPORTING_KEY`
+supplies the key that server expects. Tests never report.
 
 Details on what trace collects and why: https://danielstephenson.dev/usage-reporting
 
