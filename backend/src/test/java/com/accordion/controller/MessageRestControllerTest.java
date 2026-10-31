@@ -117,4 +117,64 @@ class MessageRestControllerTest {
 
         verify(chatService, times(1)).getRecentMessages(50);
     }
+
+    @Test
+    void testGetMessages_WithChannelId_UsesChannelScopedLookup() throws Exception {
+        when(chatService.getRecentMessagesByChannel(7L, 50)).thenReturn(testMessages);
+
+        mockMvc.perform(get("/api/messages")
+                .param("channelId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[1].username").value("user2"));
+
+        verify(chatService, times(1)).getRecentMessagesByChannel(7L, 50);
+        verify(chatService, never()).getRecentMessages(anyInt());
+    }
+
+    @Test
+    void testGetMessages_WithChannelIdAndCustomLimit() throws Exception {
+        when(chatService.getRecentMessagesByChannel(7L, 25)).thenReturn(testMessages);
+
+        mockMvc.perform(get("/api/messages")
+                .param("limit", "25")
+                .param("channelId", "7"))
+                .andExpect(status().isOk());
+
+        verify(chatService, times(1)).getRecentMessagesByChannel(7L, 25);
+    }
+
+    @Test
+    void testGetMessages_WithChannelIdAndLimitTooHigh() throws Exception {
+        when(chatService.getRecentMessagesByChannel(7L, 500)).thenReturn(testMessages);
+
+        mockMvc.perform(get("/api/messages")
+                .param("limit", "1000")
+                .param("channelId", "7"))
+                .andExpect(status().isOk());
+
+        // The cap applies to channel-scoped lookups too
+        verify(chatService, times(1)).getRecentMessagesByChannel(7L, 500);
+    }
+
+    @Test
+    void testGetMessages_WithChannelIdAndLimitTooLow() throws Exception {
+        when(chatService.getRecentMessagesByChannel(7L, 1)).thenReturn(testMessages);
+
+        mockMvc.perform(get("/api/messages")
+                .param("limit", "0")
+                .param("channelId", "7"))
+                .andExpect(status().isOk());
+
+        verify(chatService, times(1)).getRecentMessagesByChannel(7L, 1);
+    }
+
+    @Test
+    void testGetMessages_NonNumericChannelId_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/messages")
+                .param("channelId", "general"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(chatService);
+    }
 }
