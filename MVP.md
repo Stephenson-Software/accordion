@@ -30,7 +30,7 @@ A self-hosted real-time chat application with a Spring Boot WebSocket backend, a
    - `SecurityConfig`: stateless filter chain; permits `/api/users/register`, `/api/users/login`, `/ws/**`, and `/h2-console/**`, and requires authentication for everything else
    - `JwtUtil`: token issuing and validation
    - `JwtAuthenticationFilter`: reads the `Authorization: Bearer` header on REST requests
-   - `WebSocketAuthInterceptor`: authenticates STOMP `CONNECT` frames, rejecting those without a valid token
+   - `WebSocketAuthInterceptor`: authenticates STOMP `CONNECT` frames, rejecting those without a valid token, and rejects `SEND` and `SUBSCRIBE` frames from unauthenticated sessions
    - `CustomUserDetailsService`: loads users for authentication
 
 ### Frontend (LibGDX)
@@ -342,7 +342,7 @@ milliseconds (default `86400000`, i.e. 24 hours).
 #### Connect
 - **Endpoint**: `/ws` — *public handshake*, SockJS enabled
 - **Protocol**: STOMP over WebSocket
-- **Headers**: the STOMP `CONNECT` frame must carry `Authorization: Bearer <token>`; `WebSocketAuthInterceptor` rejects the connection otherwise
+- **Headers**: the STOMP `CONNECT` (or `STOMP`) frame must carry `Authorization: Bearer <token>`; `WebSocketAuthInterceptor` rejects the frame otherwise, along with any `SEND` or `SUBSCRIBE` from a session that has not authenticated
 - **Prefixes**: application destinations are prefixed `/app`, broker destinations `/topic`
 
 #### Send Message (default channel)
@@ -485,7 +485,7 @@ Dockerfiles, so changes to those must be verified locally.
 - ✅ **Authentication**: Spring Security with BCrypt-hashed passwords and stateless JWT bearer tokens
   - Password: minimum 8 characters, requiring an uppercase letter, a lowercase letter, and a digit
   - Tokens signed with HS256; `JWT_SECRET` is mandatory and has no shipped default, so startup fails fast without it
-- ✅ **Authenticated WebSocket Sessions**: STOMP `CONNECT` frames without a valid bearer token are rejected
+- ✅ **Authenticated WebSocket Sessions**: STOMP `CONNECT` and `STOMP` frames without a valid bearer token are rejected, as are `SEND` and `SUBSCRIBE` frames from a session that has not authenticated
 - ✅ **Input Validation**: Username and message content validation
   - Username: 3-50 characters, alphanumeric and underscore only
   - Message: Maximum 1000 characters
@@ -568,7 +568,7 @@ kill -9 <PID>
 **Requests fail with 401 after logging in**:
 - Confirm the client sends `Authorization: Bearer <token>` on every call except register and login
 - Tokens expire after `jwt.expiration` milliseconds (24 hours by default); log in again to obtain a fresh one
-- A STOMP `CONNECT` without that header is rejected by `WebSocketAuthInterceptor`, which closes the WebSocket
+- A STOMP `CONNECT` without that header is dropped by `WebSocketAuthInterceptor`: the WebSocket stays open but no `CONNECTED` frame arrives, and every later `SEND` or `SUBSCRIBE` on it is dropped as well
 
 ## Technology Stack
 

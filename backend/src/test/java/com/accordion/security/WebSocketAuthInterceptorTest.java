@@ -2,6 +2,8 @@ package com.accordion.security;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -64,14 +66,54 @@ class WebSocketAuthInterceptorTest {
         verifyNoInteractions(jwtUtil, userDetailsService);
     }
 
-    @Test
-    void testPreSend_NonConnectCommandPassesThroughWithoutAuthorization() {
-        StompHeaderAccessor accessor = accessorFor(StompCommand.SEND, null);
+    @ParameterizedTest
+    @EnumSource(value = StompCommand.class, names = {"SEND", "SUBSCRIBE"})
+    void testPreSend_FrameFromUnauthenticatedSessionRejected(StompCommand command) {
+        Message<byte[]> message = messageFor(accessorFor(command, null));
+
+        assertNull(interceptor.preSend(message, channel));
+        verifyNoInteractions(jwtUtil, userDetailsService);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StompCommand.class, names = {"SEND", "SUBSCRIBE"})
+    void testPreSend_FrameFromAuthenticatedSessionPassesThrough(StompCommand command) {
+        StompHeaderAccessor accessor = accessorFor(command, null);
+        accessor.setUser(new UsernamePasswordAuthenticationToken("alice", null, Collections.emptyList()));
         Message<byte[]> message = messageFor(accessor);
 
         assertSame(message, interceptor.preSend(message, channel));
-        assertNull(accessor.getUser());
         verifyNoInteractions(jwtUtil, userDetailsService);
+    }
+
+    @Test
+    void testPreSend_DisconnectFromUnauthenticatedSessionPassesThrough() {
+        Message<byte[]> message = messageFor(accessorFor(StompCommand.DISCONNECT, null));
+
+        assertSame(message, interceptor.preSend(message, channel));
+        verifyNoInteractions(jwtUtil, userDetailsService);
+    }
+
+    @Test
+    void testPreSend_StompFrameWithoutAuthorizationHeaderRejected() {
+        Message<byte[]> message = messageFor(accessorFor(StompCommand.STOMP, null));
+
+        assertNull(interceptor.preSend(message, channel));
+        verifyNoInteractions(jwtUtil, userDetailsService);
+    }
+
+    @Test
+    void testPreSend_StompFrameWithValidTokenAuthenticatesUser() {
+        UserDetails alice = userDetails("alice");
+        when(jwtUtil.extractUsername(TOKEN)).thenReturn("alice");
+        when(userDetailsService.loadUserByUsername("alice")).thenReturn(alice);
+        when(jwtUtil.validateToken(TOKEN, "alice")).thenReturn(true);
+        StompHeaderAccessor accessor = accessorFor(StompCommand.STOMP, "Bearer " + TOKEN);
+        Message<byte[]> message = messageFor(accessor);
+
+        assertSame(message, interceptor.preSend(message, channel));
+        assertEquals("alice", assertInstanceOf(
+            UsernamePasswordAuthenticationToken.class, accessor.getUser()).getName());
     }
 
     @Test
