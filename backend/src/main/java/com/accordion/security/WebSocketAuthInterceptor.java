@@ -32,7 +32,10 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             return message;
         }
 
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+        StompCommand command = accessor.getCommand();
+
+        // STOMP is the protocol's synonym for CONNECT; Spring opens a session for either
+        if (StompCommand.CONNECT.equals(command) || StompCommand.STOMP.equals(command)) {
             String authToken = accessor.getFirstNativeHeader("Authorization");
             
             if (authToken == null || !authToken.startsWith("Bearer ")) {
@@ -62,6 +65,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 logger.warn("WebSocket CONNECT rejected: Authentication failed - {}", e.getMessage());
                 return null;
             }
+        } else if ((StompCommand.SEND.equals(command) || StompCommand.SUBSCRIBE.equals(command))
+                && accessor.getUser() == null) {
+            // Spring does not require a CONNECT before these frames, and it keeps delivering
+            // them after a rejected one, so the session's user is the only reliable check
+            logger.warn("WebSocket {} rejected: session is not authenticated", command);
+            return null;
         }
         
         return message;

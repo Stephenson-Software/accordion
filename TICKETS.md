@@ -314,7 +314,7 @@ request/response payload tests under `backend/src/test/java/com/accordion/dto/`,
 bearer-token filter and user lookup tests
 (`backend/src/test/java/com/accordion/security/JwtAuthenticationFilterTest.java` and
 `CustomUserDetailsServiceTest.java` beside it), and, for the
-STOMP `CONNECT` check that protects WebSocket connections,
+STOMP session checks that protect WebSocket connections,
 `backend/src/test/java/com/accordion/security/WebSocketAuthInterceptorTest.java`.
 
 **Estimated Effort:** 3-4 days
