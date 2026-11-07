@@ -123,6 +123,14 @@ class AuthenticatedAuthorshipIntegrationTest {
     }
 
     @Test
+    void stompJoin_AcceptsAFrameWithNoBody() {
+        sendAsAlice("/app/chat.join/" + CHANNEL_ID, "");
+
+        verify(chatService, timeout(VERIFY_TIMEOUT_MILLIS))
+            .saveMessage("System", "alice has joined the chat", CHANNEL_ID);
+    }
+
+    @Test
     void createChannel_RecordsTheTokenHolderAsCreator() throws Exception {
         when(channelService.createChannel("tech-talk", null, "alice"))
             .thenReturn(new Channel("tech-talk", null, "alice"));
