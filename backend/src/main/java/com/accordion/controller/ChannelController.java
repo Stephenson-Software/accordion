@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -39,11 +40,10 @@ public class ChannelController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createChannel(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> createChannel(@RequestBody Map<String, String> payload, Principal principal) {
         try {
             String name = payload.get("name");
             String description = payload.get("description");
-            String createdBy = payload.get("createdBy");
 
             // Validate name
             if (name == null || name.trim().isEmpty()) {
@@ -68,11 +68,8 @@ public class ChannelController {
                     "Channel description cannot exceed 500 characters"));
             }
 
-            if (createdBy == null || createdBy.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Creator username is required"));
-            }
-
-            Channel channel = channelService.createChannel(name, description, createdBy.trim());
+            // The creator is the authenticated user; a "createdBy" in the body is ignored
+            Channel channel = channelService.createChannel(name, description, principal.getName());
             return ResponseEntity.status(HttpStatus.CREATED).body(channel);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

@@ -12,6 +12,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                    com.accordion.security.WebSocketAuthInterceptor.class}))
 @org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc(addFilters = false)
 class ChannelControllerTest {
+
+    private static final Principal TEST_USER = () -> "TestUser";
 
     @Autowired
     private MockMvc mockMvc;
@@ -90,9 +93,9 @@ class ChannelControllerTest {
         Map<String, String> payload = new HashMap<>();
         payload.put("name", "tech-talk");
         payload.put("description", "Tech discussions");
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isCreated())
@@ -103,13 +106,34 @@ class ChannelControllerTest {
     }
 
     @Test
+    void testCreateChannel_CreatorIsThePrincipalNotTheBody() throws Exception {
+        Channel channel = new Channel("tech-talk", "Tech discussions", "TestUser");
+        when(channelService.createChannel("tech-talk", "Tech discussions", "TestUser"))
+                .thenReturn(channel);
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("name", "tech-talk");
+        payload.put("description", "Tech discussions");
+        payload.put("createdBy", "mallory");
+
+        mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.createdBy").value("TestUser"));
+
+        verify(channelService).createChannel("tech-talk", "Tech discussions", "TestUser");
+    }
+
+    @Test
     void testCreateChannelWithInvalidName() throws Exception {
         Map<String, String> payload = new HashMap<>();
         payload.put("name", "ab"); // Too short
         payload.put("description", "Test");
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
@@ -123,9 +147,9 @@ class ChannelControllerTest {
         Map<String, String> payload = new HashMap<>();
         payload.put("name", "test channel!"); // Contains space and special char
         payload.put("description", "Test");
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
@@ -138,9 +162,9 @@ class ChannelControllerTest {
     void testCreateChannelWithMissingName() throws Exception {
         Map<String, String> payload = new HashMap<>();
         payload.put("description", "Test");
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
@@ -157,9 +181,9 @@ class ChannelControllerTest {
         Map<String, String> payload = new HashMap<>();
         payload.put("name", "general");
         payload.put("description", "Test");
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
@@ -175,9 +199,9 @@ class ChannelControllerTest {
         Map<String, String> payload = new HashMap<>();
         payload.put("name", "test-channel");
         payload.put("description", longDescription);
-        payload.put("createdBy", "TestUser");
 
         mockMvc.perform(post("/api/channels")
+                        .principal(TEST_USER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())

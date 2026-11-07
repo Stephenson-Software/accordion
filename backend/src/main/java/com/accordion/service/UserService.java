@@ -11,6 +11,9 @@ import java.util.Optional;
 @Service
 public class UserService {
 
+    // Server-generated messages are posted under this name, and clients render it specially
+    private static final String RESERVED_USERNAME = "System";
+
     @Autowired
     private UserRepository userRepository;
 
@@ -28,6 +31,10 @@ public class UserService {
     }
 
     public User registerUser(String username, String password) {
+        if (RESERVED_USERNAME.equalsIgnoreCase(username)) {
+            throw new IllegalArgumentException("Username is reserved");
+        }
+
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Username already exists");
         }

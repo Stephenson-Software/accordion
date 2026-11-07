@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,8 @@ import static org.mockito.Mockito.when;
 })
 public class TypingIndicatorTest {
 
+    private static final Principal TEST_USER = () -> "testuser";
+
     @Autowired
     private ChatController chatController;
 
@@ -37,7 +40,6 @@ public class TypingIndicatorTest {
         // Arrange
         Long channelId = 1L;
         Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "testuser");
         payload.put("typing", true);
 
         Channel mockChannel = new Channel();
@@ -46,7 +48,7 @@ public class TypingIndicatorTest {
         when(channelService.getChannelById(channelId)).thenReturn(Optional.of(mockChannel));
 
         // Act
-        TypingIndicator result = chatController.userTyping(channelId, payload);
+        TypingIndicator result = chatController.userTyping(channelId, payload, TEST_USER);
 
         // Assert
         assertNotNull(result);
@@ -60,7 +62,6 @@ public class TypingIndicatorTest {
         // Arrange
         Long channelId = 1L;
         Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "testuser");
         payload.put("typing", false);
 
         Channel mockChannel = new Channel();
@@ -69,7 +70,7 @@ public class TypingIndicatorTest {
         when(channelService.getChannelById(channelId)).thenReturn(Optional.of(mockChannel));
 
         // Act
-        TypingIndicator result = chatController.userTyping(channelId, payload);
+        TypingIndicator result = chatController.userTyping(channelId, payload, TEST_USER);
 
         // Assert
         assertNotNull(result);
@@ -82,7 +83,6 @@ public class TypingIndicatorTest {
         // Arrange
         Long channelId = 1L;
         Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "testuser");
         // No "typing" field provided
 
         Channel mockChannel = new Channel();
@@ -91,7 +91,7 @@ public class TypingIndicatorTest {
         when(channelService.getChannelById(channelId)).thenReturn(Optional.of(mockChannel));
 
         // Act
-        TypingIndicator result = chatController.userTyping(channelId, payload);
+        TypingIndicator result = chatController.userTyping(channelId, payload, TEST_USER);
 
         // Assert
         assertNotNull(result);
@@ -99,11 +99,11 @@ public class TypingIndicatorTest {
     }
 
     @Test
-    public void testUserTyping_TrimsUsername() {
+    public void testUserTyping_UsernameInPayloadIsIgnored() {
         // Arrange
         Long channelId = 1L;
         Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "  testuser  ");
+        payload.put("username", "mallory");
         payload.put("typing", true);
 
         Channel mockChannel = new Channel();
@@ -112,10 +112,9 @@ public class TypingIndicatorTest {
         when(channelService.getChannelById(channelId)).thenReturn(Optional.of(mockChannel));
 
         // Act
-        TypingIndicator result = chatController.userTyping(channelId, payload);
+        TypingIndicator result = chatController.userTyping(channelId, payload, TEST_USER);
 
         // Assert
-        assertNotNull(result);
         assertEquals("testuser", result.getUsername());
     }
 
@@ -123,35 +122,7 @@ public class TypingIndicatorTest {
     public void testUserTyping_NullPayload() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            chatController.userTyping(1L, null);
-        });
-    }
-
-    @Test
-    public void testUserTyping_EmptyUsername() {
-        // Arrange
-        Long channelId = 1L;
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "");
-        payload.put("typing", true);
-
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            chatController.userTyping(channelId, payload);
-        });
-    }
-
-    @Test
-    public void testUserTyping_WhitespaceOnlyUsername() {
-        // Arrange
-        Long channelId = 1L;
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "   ");
-        payload.put("typing", true);
-
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            chatController.userTyping(channelId, payload);
+            chatController.userTyping(1L, null, TEST_USER);
         });
     }
 
@@ -160,14 +131,13 @@ public class TypingIndicatorTest {
         // Arrange
         Long channelId = 999L;
         Map<String, Object> payload = new HashMap<>();
-        payload.put("username", "testuser");
         payload.put("typing", true);
 
         when(channelService.getChannelById(anyLong())).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            chatController.userTyping(channelId, payload);
+            chatController.userTyping(channelId, payload, TEST_USER);
         });
     }
 }

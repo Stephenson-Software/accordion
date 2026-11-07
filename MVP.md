@@ -303,7 +303,7 @@ milliseconds (default `86400000`, i.e. 24 hours).
 - **POST** `/api/users/register` — *public*
 - **Body**: `{ "username": "string", "password": "string" }`
 - **Response** `200`: `{ "token": "string", "username": "string", "userId": 1 }`
-- **Response** `400`: `{ "error": "string" }` when the username is missing or invalid, the password is missing or fails complexity validation, or the username is already taken
+- **Response** `400`: `{ "error": "string" }` when the username is missing or invalid, the password is missing or fails complexity validation, or the username is already taken or reserved (`System`, in any letter case)
 
 #### Login
 - **POST** `/api/users/login` — *public*
@@ -328,9 +328,9 @@ milliseconds (default `86400000`, i.e. 24 hours).
 
 #### Create Channel
 - **POST** `/api/channels` — *authentication required*
-- **Body**: `{ "name": "string", "description": "string", "createdBy": "string" }`
+- **Body**: `{ "name": "string", "description": "string" }` — the creator is always the authenticated user; any `createdBy` in the body is ignored
 - **Response** `201`: The created Channel object
-- **Response** `400`: `{ "error": "string" }` when the name is missing, falls outside the configured length range (`app.channel.name-min-length`/`app.channel.name-max-length`, defaulting to 3 and 50), or contains anything other than letters, numbers, hyphens, and underscores; when the description exceeds 500 characters; or when `createdBy` is missing
+- **Response** `400`: `{ "error": "string" }` when the name is missing, falls outside the configured length range (`app.channel.name-min-length`/`app.channel.name-max-length`, defaulting to 3 and 50), or contains anything other than letters, numbers, hyphens, and underscores; or when the description exceeds 500 characters
 
 #### Get Messages
 - **GET** `/api/messages` — *authentication required*
@@ -344,31 +344,32 @@ milliseconds (default `86400000`, i.e. 24 hours).
 - **Protocol**: STOMP over WebSocket
 - **Headers**: the STOMP `CONNECT` (or `STOMP`) frame must carry `Authorization: Bearer <token>`; `WebSocketAuthInterceptor` rejects the frame otherwise, along with any `SEND` or `SUBSCRIBE` from a session that has not authenticated
 - **Prefixes**: application destinations are prefixed `/app`, broker destinations `/topic`
+- **Identity**: every handler below takes the username from the authenticated session. Any `username` in a payload is ignored.
 
 #### Send Message (default channel)
 - **Destination**: `/app/chat.send`
-- **Payload**: `{ "username": "string", "content": "string" }`
+- **Payload**: `{ "content": "string" }`
 - **Broadcasts to**: `/topic/messages`
 - Any `channelId` in the payload is ignored; the message is always stored in the default channel.
 
 #### Send Message (specific channel)
 - **Destination**: `/app/chat.send/{channelId}`
-- **Payload**: `{ "username": "string", "content": "string" }`
+- **Payload**: `{ "content": "string" }`
 - **Broadcasts to**: `/topic/messages/{channelId}`
 
 #### Join (default channel)
 - **Destination**: `/app/chat.join`
-- **Payload**: `{ "username": "string" }`
+- **Payload**: none required
 - **Broadcasts to**: `/topic/messages` — a message from `System` reading `<username> has joined the chat`
 
 #### Join (specific channel)
 - **Destination**: `/app/chat.join/{channelId}`
-- **Payload**: `{ "username": "string" }`
+- **Payload**: none required
 - **Broadcasts to**: `/topic/messages/{channelId}` — a message from `System` reading `<username> has joined the chat`
 
 #### Typing Indicator
 - **Destination**: `/app/chat.typing/{channelId}`
-- **Payload**: `{ "username": "string", "typing": true }` — `typing` defaults to `true` when omitted
+- **Payload**: `{ "typing": true }` — `typing` defaults to `true` when omitted
 - **Broadcasts to**: `/topic/typing/{channelId}`
 - **Receives**: `{ "username": "string", "channelId": 1, "typing": true }`
 
@@ -486,6 +487,7 @@ Dockerfiles, so changes to those must be verified locally.
   - Password: minimum 8 characters, requiring an uppercase letter, a lowercase letter, and a digit
   - Tokens signed with HS256; `JWT_SECRET` is mandatory and has no shipped default, so startup fails fast without it
 - ✅ **Authenticated WebSocket Sessions**: STOMP `CONNECT` and `STOMP` frames without a valid bearer token are rejected, as are `SEND` and `SUBSCRIBE` frames from a session that has not authenticated
+- ✅ **Verified Authorship**: Messages, join announcements, typing indicators, and channel creation are attributed to the authenticated user, never to a client-supplied name. `System` is reserved in any letter case at registration, because server-generated messages use it
 - ✅ **Input Validation**: Username and message content validation
   - Username: 3-50 characters, alphanumeric and underscore only
   - Message: Maximum 1000 characters
@@ -497,7 +499,6 @@ Dockerfiles, so changes to those must be verified locally.
 
 ### Security Limitations (MVP)
 - ⚠️ **No Authorization**: All authenticated users can see and post in all channels; there are no roles
-- ⚠️ **Unverified Message Authorship**: The `username` in a STOMP payload is validated for format but is not checked against the authenticated principal, so a client may post under another name
 - ⚠️ **No Encryption**: Messages sent in plain text over WebSocket
 - ⚠️ **No Rate Limiting**: No protection against spam or DoS, including credential brute-forcing
 - ⚠️ **CORS Default**: Allows all origins by default (must configure for production)
@@ -508,7 +509,7 @@ Dockerfiles, so changes to those must be verified locally.
 1. **Enable HTTPS/WSS**: Use TLS for all connections
 2. **Configure CORS**: Set `app.cors.allowed-origins` to specific trusted domains
 3. **Harden Authentication**: Add password reset and consider OAuth alongside the shipped password/JWT flow
-4. **Add Authorization**: Implement role-based access control, and bind message authorship to the authenticated principal
+4. **Add Authorization**: Implement role-based access control
 5. **Disable the H2 Console**: Set `spring.h2.console.enabled=false` and restore frame options
 6. **Enable Rate Limiting**: Prevent abuse and DoS attacks
 7. **Input Sanitization**: Additional validation for XSS prevention

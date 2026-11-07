@@ -62,6 +62,18 @@ class UserServiceTest {
     }
 
     @Test
+    void testRegisterUser_ReservedUsernameRejected() {
+        for (String reserved : new String[] {"System", "system", "SYSTEM"}) {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.registerUser(reserved, "Password123"));
+
+            assertEquals("Username is reserved", ex.getMessage());
+        }
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void testRegisterUser_Success() {
         String rawPassword = "Password123";
         String encodedPassword = "$2a$10$encodedPasswordHash";
