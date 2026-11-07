@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ class ChatControllerTest {
 
     private static final Long DEFAULT_CHANNEL_ID = 1L;
     private static final Long OTHER_CHANNEL_ID = 7L;
+    private static final Principal ALICE = () -> "alice";
 
     @Mock
     private ChatService chatService;
@@ -44,10 +46,8 @@ class ChatControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Same values as backend/src/main/resources/application.properties
+        // Same value as backend/src/main/resources/application.properties
         ReflectionTestUtils.setField(chatController, "maxMessageLength", 1000);
-        ReflectionTestUtils.setField(chatController, "maxUsernameLength", 50);
-        ReflectionTestUtils.setField(chatController, "minUsernameLength", 3);
 
         defaultChannel = new Channel("general", "General discussion", "System");
         defaultChannel.setId(DEFAULT_CHANNEL_ID);
@@ -55,10 +55,15 @@ class ChatControllerTest {
         otherChannel.setId(OTHER_CHANNEL_ID);
     }
 
-    private static Map<String, String> payload(String username, String content) {
+    private static Map<String, String> payload(String content) {
         Map<String, String> payload = new HashMap<>();
-        payload.put("username", username);
         payload.put("content", content);
+        return payload;
+    }
+
+    private static Map<String, String> forgedPayload(String username, String content) {
+        Map<String, String> payload = payload(content);
+        payload.put("username", username);
         return payload;
     }
 
@@ -70,7 +75,7 @@ class ChatControllerTest {
         ChatMessage saved = new ChatMessage("alice", "hello", DEFAULT_CHANNEL_ID);
         when(chatService.saveMessage("alice", "hello", DEFAULT_CHANNEL_ID)).thenReturn(saved);
 
-        ChatMessage result = chatController.sendMessage(payload("  alice  ", "  hello  "));
+        ChatMessage result = chatController.sendMessage(payload("  hello  "), ALICE);
 
         assertSame(saved, result);
         verify(chatService).saveMessage("alice", "hello", DEFAULT_CHANNEL_ID);
@@ -79,10 +84,10 @@ class ChatControllerTest {
     @Test
     void testSendMessage_IgnoresChannelIdInPayload() {
         when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
-        Map<String, String> payload = payload("alice", "hello");
+        Map<String, String> payload = payload("hello");
         payload.put("channelId", String.valueOf(OTHER_CHANNEL_ID));
 
-        chatController.sendMessage(payload);
+        chatController.sendMessage(payload, ALICE);
 
         verify(chatService).saveMessage("alice", "hello", DEFAULT_CHANNEL_ID);
         verify(channelService, never()).getChannelById(anyLong());
@@ -90,28 +95,7 @@ class ChatControllerTest {
 
     @Test
     void testSendMessage_NullPayload() {
-        assertThrows(IllegalArgumentException.class, () -> chatController.sendMessage(null));
-        verifyNoInteractions(chatService);
-    }
-
-    @Test
-    void testSendMessage_InvalidUsername() {
-        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessage(payload("al", "hello")));
-
-        assertEquals("Invalid username", ex.getMessage());
-        verifyNoInteractions(chatService);
-    }
-
-    @Test
-    void testSendMessage_UsernameWithIllegalCharacters() {
-        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
-
-        assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessage(payload("alice!", "hello")));
-
+        assertThrows(IllegalArgumentException.class, () -> chatController.sendMessage(null, ALICE));
         verifyNoInteractions(chatService);
     }
 
@@ -120,7 +104,7 @@ class ChatControllerTest {
         when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessage(payload("alice", "   ")));
+            () -> chatController.sendMessage(payload("   "), ALICE));
 
         assertEquals("Invalid message content", ex.getMessage());
         verifyNoInteractions(chatService);
@@ -131,7 +115,7 @@ class ChatControllerTest {
         when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
         String content = "a".repeat(1000);
 
-        chatController.sendMessage(payload("alice", content));
+        chatController.sendMessage(payload(content), ALICE);
 
         verify(chatService).saveMessage("alice", content, DEFAULT_CHANNEL_ID);
     }
@@ -141,12 +125,39 @@ class ChatControllerTest {
         when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
 
         assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessage(payload("alice", "a".repeat(1001))));
+            () -> chatController.sendMessage(payload("a".repeat(1001)), ALICE));
 
         verifyNoInteractions(chatService);
     }
 
+    @Test
+    void testSendMessage_AuthorIsThePrincipalNotThePayload() {
+        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
+
+        chatController.sendMessage(forgedPayload("mallory", "hello"), ALICE);
+
+        verify(chatService).saveMessage("alice", "hello", DEFAULT_CHANNEL_ID);
+    }
+
+    @Test
+    void testSendMessage_ReservedNameInPayloadIsIgnored() {
+        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
+
+        chatController.sendMessage(forgedPayload("System", "hello"), ALICE);
+
+        verify(chatService).saveMessage("alice", "hello", DEFAULT_CHANNEL_ID);
+    }
+
     // --- /chat.send/{channelId} ---
+
+    @Test
+    void testSendMessageToChannel_AuthorIsThePrincipalNotThePayload() {
+        when(channelService.getChannelById(OTHER_CHANNEL_ID)).thenReturn(Optional.of(otherChannel));
+
+        chatController.sendMessageToChannel(OTHER_CHANNEL_ID, forgedPayload("mallory", "hello"), ALICE);
+
+        verify(chatService).saveMessage("alice", "hello", OTHER_CHANNEL_ID);
+    }
 
     @Test
     void testSendMessageToChannel_SavesTrimmedMessageToThatChannel() {
@@ -154,7 +165,7 @@ class ChatControllerTest {
         ChatMessage saved = new ChatMessage("alice", "hello", OTHER_CHANNEL_ID);
         when(chatService.saveMessage("alice", "hello", OTHER_CHANNEL_ID)).thenReturn(saved);
 
-        ChatMessage result = chatController.sendMessageToChannel(OTHER_CHANNEL_ID, payload(" alice ", " hello "));
+        ChatMessage result = chatController.sendMessageToChannel(OTHER_CHANNEL_ID, payload(" hello "), ALICE);
 
         assertSame(saved, result);
         verify(channelService, never()).getOrCreateDefaultChannel();
@@ -165,7 +176,7 @@ class ChatControllerTest {
         when(channelService.getChannelById(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessageToChannel(999L, payload("alice", "hello")));
+            () -> chatController.sendMessageToChannel(999L, payload("hello"), ALICE));
 
         assertEquals("Channel does not exist", ex.getMessage());
         verifyNoInteractions(chatService);
@@ -174,23 +185,14 @@ class ChatControllerTest {
     @Test
     void testSendMessageToChannel_NullPayload() {
         assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessageToChannel(OTHER_CHANNEL_ID, null));
-        verifyNoInteractions(chatService, channelService);
-    }
-
-    @Test
-    void testSendMessageToChannel_InvalidUsernameRejectedBeforeChannelLookup() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessageToChannel(OTHER_CHANNEL_ID, payload(null, "hello")));
-
-        assertEquals("Invalid username", ex.getMessage());
+            () -> chatController.sendMessageToChannel(OTHER_CHANNEL_ID, null, ALICE));
         verifyNoInteractions(chatService, channelService);
     }
 
     @Test
     void testSendMessageToChannel_MissingContentRejectedBeforeChannelLookup() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.sendMessageToChannel(OTHER_CHANNEL_ID, payload("alice", null)));
+            () -> chatController.sendMessageToChannel(OTHER_CHANNEL_ID, payload(null), ALICE));
 
         assertEquals("Invalid message content", ex.getMessage());
         verifyNoInteractions(chatService, channelService);
@@ -204,26 +206,9 @@ class ChatControllerTest {
         ChatMessage saved = new ChatMessage("System", "alice has joined the chat", DEFAULT_CHANNEL_ID);
         when(chatService.saveMessage("System", "alice has joined the chat", DEFAULT_CHANNEL_ID)).thenReturn(saved);
 
-        ChatMessage result = chatController.userJoin(payload("  alice  ", null));
+        ChatMessage result = chatController.userJoin(ALICE);
 
         assertSame(saved, result);
-    }
-
-    @Test
-    void testUserJoin_NullPayload() {
-        assertThrows(IllegalArgumentException.class, () -> chatController.userJoin(null));
-        verifyNoInteractions(chatService);
-    }
-
-    @Test
-    void testUserJoin_InvalidUsername() {
-        when(channelService.getOrCreateDefaultChannel()).thenReturn(defaultChannel);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.userJoin(payload("a".repeat(51), null)));
-
-        assertEquals("The 'username' field must be valid", ex.getMessage());
-        verifyNoInteractions(chatService);
     }
 
     // --- /chat.join/{channelId} ---
@@ -234,7 +219,7 @@ class ChatControllerTest {
         ChatMessage saved = new ChatMessage("System", "alice has joined the chat", OTHER_CHANNEL_ID);
         when(chatService.saveMessage("System", "alice has joined the chat", OTHER_CHANNEL_ID)).thenReturn(saved);
 
-        ChatMessage result = chatController.userJoinChannel(OTHER_CHANNEL_ID, payload(" alice ", null));
+        ChatMessage result = chatController.userJoinChannel(OTHER_CHANNEL_ID, ALICE);
 
         assertSame(saved, result);
         verify(channelService, never()).getOrCreateDefaultChannel();
@@ -245,25 +230,10 @@ class ChatControllerTest {
         when(channelService.getChannelById(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.userJoinChannel(999L, payload("alice", null)));
+            () -> chatController.userJoinChannel(999L, ALICE));
 
         assertEquals("Channel does not exist", ex.getMessage());
         verifyNoInteractions(chatService);
     }
 
-    @Test
-    void testUserJoinChannel_NullPayload() {
-        assertThrows(IllegalArgumentException.class,
-            () -> chatController.userJoinChannel(OTHER_CHANNEL_ID, null));
-        verifyNoInteractions(chatService, channelService);
-    }
-
-    @Test
-    void testUserJoinChannel_InvalidUsernameRejectedBeforeChannelLookup() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> chatController.userJoinChannel(OTHER_CHANNEL_ID, payload("   ", null)));
-
-        assertEquals("The 'username' field must be valid", ex.getMessage());
-        verifyNoInteractions(chatService, channelService);
-    }
 }
