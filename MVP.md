@@ -174,6 +174,10 @@ app.username.min-length=3
 # Password Validation
 app.password.min-length=8
 
+# Channel Name Validation
+app.channel.name-max-length=50
+app.channel.name-min-length=3
+
 # JWT Configuration
 # The placeholder carries no default, so an absent JWT_SECRET is unresolvable and
 # startup fails. JwtUtil additionally rejects a blank or shorter-than-32-byte secret.

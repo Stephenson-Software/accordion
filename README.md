@@ -182,6 +182,8 @@ cp sample.env .env
 - `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
 - `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
+- `APP_CHANNEL_NAME_MIN_LENGTH`: Minimum channel name length (default: 3)
+- `APP_CHANNEL_NAME_MAX_LENGTH`: Maximum channel name length (default: 50)
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
   [trace](https://danielstephenson.dev/usage-reporting) usage service (default: `true`; see
   [Usage reporting](#usage-reporting))
