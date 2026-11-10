@@ -66,6 +66,8 @@ nano .env  # or use your preferred editor
 - `APP_USERNAME_MIN_LENGTH`: Minimum username length (default: 3)
 - `APP_USERNAME_MAX_LENGTH`: Maximum username length (default: 50)
 - `APP_PASSWORD_MIN_LENGTH`: Minimum password length (default: 8)
+- `APP_CHANNEL_NAME_MIN_LENGTH`: Minimum channel name length (default: 3)
+- `APP_CHANNEL_NAME_MAX_LENGTH`: Maximum channel name length (default: 50)
 
 #### Usage Reporting
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
@@ -232,6 +234,8 @@ docker run -d \
 | `APP_USERNAME_MAX_LENGTH` | `50` | Maximum username length |
 | `APP_PASSWORD_MIN_LENGTH` | `8` | Minimum password length |
 | `APP_MESSAGE_MAX_LENGTH` | `1000` | Maximum message content length |
+| `APP_CHANNEL_NAME_MIN_LENGTH` | `3` | Minimum channel name length |
+| `APP_CHANNEL_NAME_MAX_LENGTH` | `50` | Maximum channel name length |
 | `SPRING_JPA_SHOW_SQL` | `false` | Show SQL queries in logs |
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
 | `USAGE_REPORTING_ENABLED` | `true` | Report `startup` and `channel-created` events to the trace usage service; `false` turns it off |

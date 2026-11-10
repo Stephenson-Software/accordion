@@ -46,6 +46,8 @@ services:
       - APP_USERNAME_MAX_LENGTH=${APP_USERNAME_MAX_LENGTH:-50}
       - APP_USERNAME_MIN_LENGTH=${APP_USERNAME_MIN_LENGTH:-3}
       - APP_PASSWORD_MIN_LENGTH=${APP_PASSWORD_MIN_LENGTH:-8}
+      - APP_CHANNEL_NAME_MAX_LENGTH=${APP_CHANNEL_NAME_MAX_LENGTH:-50}
+      - APP_CHANNEL_NAME_MIN_LENGTH=${APP_CHANNEL_NAME_MIN_LENGTH:-3}
 
       # Usage reporting to trace (a startup event and a channel-created event, each carrying
       # the program name, version and a random installation ID; see README). On by default;
