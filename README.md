@@ -1,4 +1,4 @@
-# accordion-prototype
+# Accordion
 
 **Accordion Chat MVP** - A self-hosted real-time chat application with Spring Boot WebSocket backend and LibGDX frontend.
 
@@ -32,7 +32,7 @@ Accordion is a Discord-like self-hosted chat application designed for simplicity
 - ✅ **Message persistence in H2 database (survives container restarts)**
 - ✅ Message history on login (channel-specific)
 - ✅ Timestamp for each message
-- ✅ User join/leave notifications
+- ✅ User join notifications
 - ✅ **Browser-based web interface** (accessible from any device)
 - ✅ Cross-platform desktop support (LibGDX)
 - ✅ Docker containerization for easy deployment
@@ -192,10 +192,10 @@ See `sample.env` for the complete list of configurable options.
 
 ### Running with Docker Compose
 
-The easiest way to run the backend in a container:
+The easiest way to run the backend and web application in containers:
 
 ```bash
-# Build and start the backend
+# Build and start both services
 docker compose up -d
 
 # View logs
@@ -251,7 +251,7 @@ docker logs -f accordion-webapp
 **Stop and remove:**
 ```bash
 docker stop accordion-backend accordion-webapp
-docker rm accordion-backend
+docker rm accordion-backend accordion-webapp
 ```
 
 ### Environment Variables
@@ -320,26 +320,31 @@ docker compose up -d
 ## Project Structure
 
 ```
-accordion-prototype/
+accordion/
 ├── MVP.md                          # Detailed MVP documentation
 ├── README.md                       # This file
+├── TICKETS.md                      # Development tickets and status
+├── DOCKER.md                       # Docker deployment guide
+├── sample.env                      # Environment variable template for Docker Compose
 ├── Dockerfile                      # Docker image for backend
 ├── Dockerfile.webapp               # Docker image for web application
 ├── compose.yml                     # Docker Compose configuration
 ├── .dockerignore                   # Docker build exclusions
 ├── backend/                        # Spring Boot backend
 │   ├── pom.xml                    # Maven configuration
-│   └── src/main/java/com/accordion/
-│       ├── AccordionApplication.java
-│       ├── config/                # WebSocket, Spring Security, and data seeding configuration
-│       ├── controller/            # REST and WebSocket controllers
-│       ├── dto/                   # Request/response payloads (login, register, auth)
-│       ├── model/                 # JPA entities
-│       ├── repository/            # Data repositories
-│       ├── security/              # JWT issuing/validation and authentication filters
-│       ├── service/               # Business logic
-│       ├── trace/                 # Vendored trace-client-java (usage reporting)
-│       └── util/                  # Validation utilities
+│   └── src/
+│       ├── main/java/com/accordion/
+│       │   ├── AccordionApplication.java
+│       │   ├── config/            # WebSocket, Spring Security, and data seeding configuration
+│       │   ├── controller/        # REST and WebSocket controllers
+│       │   ├── dto/               # Request/response payloads (login, register, auth)
+│       │   ├── model/             # JPA entities
+│       │   ├── repository/        # Data repositories
+│       │   ├── security/          # JWT issuing/validation and authentication filters
+│       │   ├── service/           # Business logic
+│       │   ├── trace/             # Vendored trace-client-java (usage reporting)
+│       │   └── util/              # Validation utilities
+│       └── test/                  # JUnit 5 test suite (mirrors the main tree)
 ├── webapp/                         # Spring Boot web application
 │   ├── pom.xml                    # Maven configuration
 │   └── src/
@@ -375,6 +380,13 @@ cd backend
 mvn clean install
 ```
 
+### Web Application
+
+```bash
+cd webapp
+mvn clean package
+```
+
 ### Frontend
 
 ```bash
@@ -398,12 +410,12 @@ that is `USAGE_REPORTING_ENABLED` — see [Usage reporting](#usage-reporting).
 ### Frontend
 
 The desktop client's WebSocket endpoint comes from `AppConfig.getWebSocketUrl()`,
-which defaults to `ws://localhost:8080/ws`. To connect to a remote server, override
-it with a system property rather than editing the source:
-
-```bash
-./gradlew desktop:run -Daccordion.websocket.url=ws://yourserver.com:8080/ws
-```
+which defaults to `ws://localhost:8080/ws` and can be overridden by the
+`accordion.websocket.url` system property of the client JVM. The `desktop:run`
+Gradle task does not currently forward `-D` flags to the JVM it launches, so
+`./gradlew desktop:run -Daccordion.websocket.url=...` has no effect and the client
+still connects to the default URL
+([#91](https://github.com/Stephenson-Software/accordion/issues/91)).
 
 ## Development Roadmap
 

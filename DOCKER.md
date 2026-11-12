@@ -321,12 +321,19 @@ volumes:
 
 ### Connecting Frontend to Dockerized Backend
 
-When running the frontend on the host machine and backend in Docker:
+When running the frontend on the host machine and backend in Docker with the default
+`BACKEND_PORT=8080`, the desktop client's default endpoint (`ws://localhost:8080/ws`)
+already reaches the backend:
 
 ```bash
 # Frontend connects to backend
-./gradlew desktop:run -Daccordion.websocket.url=ws://localhost:8080/ws
+cd frontend
+./gradlew desktop:run
 ```
+
+Pointing the client at a different host or port is not currently possible through
+`./gradlew desktop:run`: `-D` flags are not forwarded to the client JVM
+([#91](https://github.com/Stephenson-Software/accordion/issues/91)).
 
 ### Running Multiple Services
 
