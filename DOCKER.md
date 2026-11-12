@@ -335,6 +335,10 @@ Pointing the client at a different host or port is not currently possible throug
 `./gradlew desktop:run`: `-D` flags are not forwarded to the client JVM
 ([#91](https://github.com/Stephenson-Software/accordion/issues/91)).
 
+Reaching the endpoint is not the same as connecting: the desktop client predates JWT
+authentication and sends a STOMP `CONNECT` frame with no `Authorization` header, which
+the backend rejects (see the desktop-client note in [README.md](README.md#using-the-chat-application)).
+
 ### Running Multiple Services
 
 The compose configuration uses a bridge network (`accordion-network`) that allows for future service expansion:
