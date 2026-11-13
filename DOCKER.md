@@ -331,9 +331,12 @@ cd frontend
 ./gradlew desktop:run
 ```
 
-Pointing the client at a different host or port is not currently possible through
-`./gradlew desktop:run`: `-D` flags are not forwarded to the client JVM
-([#91](https://github.com/Stephenson-Software/accordion/issues/91)).
+To point the client at a different host or port, pass the endpoint as a system
+property; `desktop:run` forwards `-Daccordion.*` flags to the client JVM:
+
+```bash
+./gradlew desktop:run -Daccordion.websocket.url=ws://localhost:9090/ws
+```
 
 Reaching the endpoint is not the same as connecting: the desktop client predates JWT
 authentication and sends a STOMP `CONNECT` frame with no `Authorization` header, which
