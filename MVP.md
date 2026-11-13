@@ -192,10 +192,9 @@ jwt.expiration=86400000
 ### Frontend Configuration
 - **WebSocket endpoint**: Configurable via `AppConfig.getWebSocketUrl()`
   - Default: `ws://localhost:8080/ws`
-  - Overridable by the client JVM's `accordion.websocket.url` system property; the
-    `desktop:run` Gradle task does not currently forward `-D` flags to the JVM it
-    launches, so the override cannot be applied through `./gradlew desktop:run`
-    ([#91](https://github.com/Stephenson-Software/accordion/issues/91))
+  - Overridable by the client JVM's `accordion.websocket.url` system property, which
+    `desktop:run` forwards from the Gradle command line:
+    `./gradlew desktop:run -Daccordion.websocket.url=ws://yourserver.com:8080/ws`
 - **Window size**: 800x600
 - **Title**: "Accordion Chat"
 - **Username constraints**: 3-50 characters, alphanumeric and underscore only
