@@ -18,6 +18,9 @@ tasks.register('run', JavaExec) {
     standardInput = System.in
     workingDir = project.assetsDir
     ignoreExitValue = true
+    // JavaExec forks a separate JVM, so `-D` flags given to gradlew do not reach the
+    // client unless forwarded here (e.g. -Daccordion.websocket.url=...).
+    systemProperties System.getProperties().findAll { it.key.toString().startsWith('accordion.') }
 }
 
 tasks.register('dist', Jar) {

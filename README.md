@@ -412,10 +412,11 @@ that is `USAGE_REPORTING_ENABLED` — see [Usage reporting](#usage-reporting).
 The desktop client's WebSocket endpoint comes from `AppConfig.getWebSocketUrl()`,
 which defaults to `ws://localhost:8080/ws` and can be overridden by the
 `accordion.websocket.url` system property of the client JVM. The `desktop:run`
-Gradle task does not currently forward `-D` flags to the JVM it launches, so
-`./gradlew desktop:run -Daccordion.websocket.url=...` has no effect and the client
-still connects to the default URL
-([#91](https://github.com/Stephenson-Software/accordion/issues/91)).
+Gradle task forwards every `-Daccordion.*` flag to the JVM it launches:
+
+```bash
+./gradlew desktop:run -Daccordion.websocket.url=ws://yourserver.com:8080/ws
+```
 
 ## Development Roadmap
 
