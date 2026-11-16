@@ -81,7 +81,7 @@ Client (Web / LibGDX) <--> WebSocket <--> Spring Boot Server <--> H2 Database
 
 ### Prerequisites
 - Java 17 or higher
-- Maven 3.6+ (for backend)
+- Maven 3.6+ (for backend and web application)
 - Gradle 7+ (for frontend)
 
 ### Backend Setup
@@ -133,12 +133,17 @@ Client (Web / LibGDX) <--> WebSocket <--> Spring Boot Server <--> H2 Database
 From the root directory:
 
 ```bash
-# Terminal 1 - Start backend
+# Terminal 1 - Start backend (JWT_SECRET is required; startup fails without it)
+export JWT_SECRET="$(openssl rand -base64 48)"
 cd backend && mvn spring-boot:run
 
-# Terminal 2 - Start frontend
-cd frontend && ./gradlew desktop:run
+# Terminal 2 - Start web application, then open http://localhost:3000
+cd webapp && mvn spring-boot:run
 ```
+
+The LibGDX desktop client (`cd frontend && ./gradlew desktop:run`) still launches, but it
+predates JWT authentication and cannot connect to the backend started above — see
+[MVP Limitations](#mvp-limitations).
 
 ## Configuration
 
