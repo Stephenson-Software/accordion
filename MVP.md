@@ -346,7 +346,7 @@ milliseconds (default `86400000`, i.e. 24 hours).
 #### Get Messages
 - **GET** `/api/messages` — *authentication required*
 - **Query Params**: `limit` (optional, default: 50, clamped to 1-500), `channelId` (optional; all channels when omitted)
-- **Response** `200`: Array of ChatMessage objects
+- **Response** `200`: Array of the `limit` most recent ChatMessage objects, ordered oldest first
 
 ### WebSocket Endpoints
 
@@ -506,7 +506,7 @@ Dockerfiles, so changes to those must be verified locally.
 - ✅ **Database Constraints**: Length limits enforced at database level
 - ✅ **Request Limits**: Message history API limited to 500 messages max
 - ✅ **Error Handling**: Proper exception handling with user-friendly messages
-- ✅ **Logging**: Structured logging with java.util.logging
+- ✅ **Logging**: Authentication failures and usage-reporting state are logged through SLF4J (Spring Boot's default Logback backend)
 
 ### Security Limitations (MVP)
 - ⚠️ **No Authorization**: All authenticated users can see and post in all channels; there are no roles
@@ -589,9 +589,9 @@ kill -9 <PID>
 - **Spring Boot 3.x**: Application framework
 - **Spring WebSocket**: Real-time communication
 - **Spring Data JPA**: Data persistence
-- **H2 Database**: In-memory database
+- **Spring Security**: BCrypt password hashing and JWT bearer authentication
+- **H2 Database**: In-memory when run from source, file-based on a Docker volume under Docker Compose
 - **Maven**: Build tool
-- **Lombok** (optional): Reduce boilerplate code
 
 ### Frontend
 - **Java 17+**: Programming language
@@ -605,7 +605,7 @@ kill -9 <PID>
 ### MVP Performance Profile
 - **Expected Users**: 5-10 concurrent users
 - **Message Throughput**: ~100 messages/minute
-- **Database**: In-memory (fast, but not persistent)
+- **Database**: In-memory H2 when run from source (not persistent); file-based H2 on a Docker volume under Docker Compose
 - **Memory Usage**: ~200MB backend, ~150MB frontend
 
 ### Scalability Notes
@@ -627,8 +627,9 @@ This is an MVP prototype. Contributions welcome for:
 
 ## License
 
-[Specify license here]
+This project is licensed under the **Stephenson Software Non-Commercial License (Stephenson-NC)**;
+see [LICENSE](LICENSE) and the License section of [README.md](README.md).
 
 ## Contact
 
-[Project maintainer contact information]
+For issues or questions, please open an issue on GitHub.
