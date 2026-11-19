@@ -74,12 +74,13 @@ nano .env  # or use your preferred editor
   [trace](https://danielstephenson.dev/usage-reporting) usage service (default: `true`).
   It sends one `startup` event when ready and one `channel-created` event per channel created,
   each carrying only the program name `accordion`, its version and a random installation ID —
-  nothing about users, messages, channel names or the host. Set to `false` to turn it off; the backend logs one
+  nothing about users, messages, channel names or the host. Set to `false` to turn it off (it fails
+  closed: anything but `true`/`on`/`yes`/`1`, blank included, is off); the backend logs one
   INFO line at every start saying whether it is on. See the README's "Usage reporting" section
   and https://danielstephenson.dev/usage-reporting.
 - `TRACE_USAGE_REPORTING`: The switch every trace client honours, checked before
-  `USAGE_REPORTING_ENABLED`; `off` (or `false`, `0`, `no`) turns reporting off (default: unset).
-- `DO_NOT_TRACK`: `1` (or `true`, `yes`) turns reporting off too, per
+  `USAGE_REPORTING_ENABLED`; `off` (or anything but blank/`true`/`on`/`yes`/`1`) turns reporting off (default: unset).
+- `DO_NOT_TRACK`: `1` (or anything but blank/`0`/`false`/`off`/`no`) turns reporting off too, per
   https://consoledonottrack.com (default: unset).
 - `USAGE_REPORTING_ENDPOINT`: Trace server that usage reports are sent to
   (default: `https://trace.danielstephenson.dev`).
@@ -238,11 +239,11 @@ docker run -d \
 | `APP_CHANNEL_NAME_MAX_LENGTH` | `50` | Maximum channel name length |
 | `SPRING_JPA_SHOW_SQL` | `false` | Show SQL queries in logs |
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enable H2 console |
-| `USAGE_REPORTING_ENABLED` | `true` | Report `startup` and `channel-created` events to the trace usage service; `false` turns it off |
+| `USAGE_REPORTING_ENABLED` | `true` | Report `startup` and `channel-created` events to the trace usage service; `false` (anything but `true`/`on`/`yes`/`1`, blank included) turns it off |
 | `USAGE_REPORTING_ENDPOINT` | `https://trace.danielstephenson.dev` | Trace server that usage reports are sent to |
 | `USAGE_REPORTING_KEY` | *(built-in key)* | Key sent with usage reports; set it for a trace server that expects a different key |
-| `TRACE_USAGE_REPORTING` | *(unset)* | `off` (or `false`, `0`, `no`) turns usage reporting off; checked before `USAGE_REPORTING_ENABLED` |
-| `DO_NOT_TRACK` | *(unset)* | `1` (or `true`, `yes`) turns usage reporting off |
+| `TRACE_USAGE_REPORTING` | *(unset)* | `off` (anything but blank/`true`/`on`/`yes`/`1`) turns usage reporting off; checked before `USAGE_REPORTING_ENABLED` |
+| `DO_NOT_TRACK` | *(unset)* | `1` (anything but blank/`0`/`false`/`off`/`no`) turns usage reporting off |
 | `TRACE_INSTALL_ID` | *(unset)* | Pins the installation ID sent with usage reports; without it a random ID is stored in the container's user data directory, which is lost when the container is recreated |
 
 ## Health Checks
