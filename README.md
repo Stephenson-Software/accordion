@@ -185,7 +185,8 @@ cp sample.env .env
 - `APP_CHANNEL_NAME_MIN_LENGTH`: Minimum channel name length (default: 3)
 - `APP_CHANNEL_NAME_MAX_LENGTH`: Maximum channel name length (default: 50)
 - `USAGE_REPORTING_ENABLED`: Whether the backend reports that it is in use to the
-  [trace](https://danielstephenson.dev/usage-reporting) usage service (default: `true`; see
+  [trace](https://danielstephenson.dev/usage-reporting) usage service (default when unset:
+  `true`; anything but `true`/`on`/`yes`/`1`, blank included, is off; see
   [Usage reporting](#usage-reporting))
 
 See `sample.env` for the complete list of configurable options.
@@ -481,6 +482,12 @@ To turn it off, any one of these is enough:
   trace client honours, checked before the backend's own setting
 - `DO_NOT_TRACK=1` (also `true`, `yes`) in the environment, per
   [consoledonottrack.com](https://consoledonottrack.com)
+
+Every switch fails closed, so an opt-out is never read as "on": `USAGE_REPORTING_ENABLED`
+keeps reporting on only for `true`, `on`, `yes` or `1` (any case) and turns it off for
+anything else, blank or a typo included; `TRACE_USAGE_REPORTING` set to anything but blank
+or one of those values turns it off; `DO_NOT_TRACK` set to anything but blank, `0`, `false`,
+`off` or `no` turns it off.
 
 `USAGE_REPORTING_ENDPOINT` points it at a different trace server, and `USAGE_REPORTING_KEY`
 supplies the key that server expects. Tests never report.

@@ -5,6 +5,7 @@ import com.accordion.trace.TraceInstallId;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -22,9 +23,11 @@ import org.springframework.stereotype.Service;
  * client's own daemon thread, at most 256 reports wait to be sent before new ones are dropped,
  * and a trace server that is down, slow or rejecting the key costs nothing beyond a dropped
  * report. Reporting is on by default and turned off with {@code usage-reporting.enabled=false}
- * ({@code USAGE_REPORTING_ENABLED=false}), or with the environment variables every trace
- * client honours, {@code TRACE_USAGE_REPORTING=off} and {@code DO_NOT_TRACK=1}, which the
- * client checks before anything this service passes it; one INFO line at every start says
+ * ({@code USAGE_REPORTING_ENABLED=false}; anything but {@code true}/{@code on}/{@code yes}/
+ * {@code 1}, blank included, is off), or with the environment variables every trace client
+ * honours, {@code TRACE_USAGE_REPORTING=off} and {@code DO_NOT_TRACK=1} (each set to anything
+ * but blank or a clear "keep reporting" value is off), which the client checks before anything
+ * this service passes it; one INFO line at every start says
  * which it is and, when off, why. Details:
  * https://danielstephenson.dev/usage-reporting
  */
@@ -46,11 +49,23 @@ public class UsageReportingService {
     private final boolean endpointMissing;
     private final String version;
 
+    /**
+     * Reads {@code usage-reporting.enabled} as the raw string and through
+     * {@link TraceClient#allowsReporting(Object)}, so it fails closed: anything but
+     * {@code true}, {@code on}, {@code yes} or {@code 1} -- {@code false}, {@code off}, blank,
+     * a typo -- turns reporting off. Spring's own boolean conversion would refuse to start on a
+     * typo or a blank {@code USAGE_REPORTING_ENABLED} instead.
+     */
+    @Autowired
     public UsageReportingService(
-            @Value("${usage-reporting.enabled:true}") boolean enabled,
+            @Value("${usage-reporting.enabled:true}") String enabled,
             @Value("${usage-reporting.endpoint:https://trace.danielstephenson.dev}") String endpoint,
             @Value("${usage-reporting.key:}") String key,
             @Value("${accordion.version:unknown}") String version) {
+        this(TraceClient.allowsReporting(enabled), endpoint, key, version);
+    }
+
+    UsageReportingService(boolean enabled, String endpoint, String key, String version) {
         this.version = version == null || version.isBlank() ? "unknown" : version;
         this.endpointMissing = endpoint == null || endpoint.isBlank();
         this.client = buildClient(enabled, endpointMissing ? null : endpoint, key, this.version);
@@ -81,7 +96,7 @@ public class UsageReportingService {
             return REASON_NO_ENDPOINT;
         }
         if (TraceClient.REASON_CONFIG.equals(reason)) {
-            return "USAGE_REPORTING_ENABLED=false";
+            return "USAGE_REPORTING_ENABLED is not true";
         }
         return reason;
     }

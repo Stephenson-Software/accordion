@@ -4,6 +4,8 @@ import com.accordion.service.UsageReportingService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,8 +63,55 @@ class UsageReportingEnvironmentTest {
         service.close();
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"false", "FALSE", "off", "no", "0", "", " ", "disabled", "flase", "\"false\""})
+    void usageReportingEnabledFailsClosed(String value) {
+        // Read through the client's helper, so anything but a clear "on" is off rather than a
+        // startup failure (Spring's boolean conversion) or on.
+        UsageReportingService service = newService(value);
+
+        assertFalse(service.isEnabled(), "usage-reporting.enabled=" + value + " must switch reporting off");
+        service.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "TRUE", "on", "yes", "1", " true "})
+    void usageReportingEnabledOnValuesKeepItOn(String value) {
+        UsageReportingService service = newService(value);
+
+        assertTrue(service.isEnabled(), "usage-reporting.enabled=" + value + " keeps reporting on");
+        service.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"false", "disabled", "0"})
+    void traceUsageReportingFailsClosed(String value) {
+        environment.put("TRACE_USAGE_REPORTING", value);
+
+        UsageReportingService service = newService();
+
+        assertFalse(service.isEnabled(), "TRACE_USAGE_REPORTING=" + value + " must switch reporting off");
+        service.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "yes", "anything"})
+    void doNotTrackFailsClosed(String value) {
+        environment.put("DO_NOT_TRACK", value);
+
+        UsageReportingService service = newService();
+
+        assertFalse(service.isEnabled(), "DO_NOT_TRACK=" + value + " must switch reporting off");
+        service.close();
+    }
+
     private static UsageReportingService newService() {
-        // Enabled, with a key, pointed at a port nothing listens on: nothing is sent either way.
-        return new UsageReportingService(true, "http://127.0.0.1:9", "test-key", "1.0");
+        return newService("true");
+    }
+
+    private static UsageReportingService newService(String enabled) {
+        // With a key, pointed at a port nothing listens on: nothing is sent either way. Goes
+        // through the constructor Spring uses, so the raw usage-reporting.enabled string is read.
+        return new UsageReportingService(enabled, "http://127.0.0.1:9", "test-key", "1.0");
     }
 }
