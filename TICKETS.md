@@ -105,6 +105,12 @@ Implement user service layer and REST endpoints for user login/registration.
 - [x] Add error handling for invalid usernames
 - [x] Test API with curl or Postman
 
+**Note:** These criteria describe the original username-only MVP login. Since
+TICKET-102, `POST /api/users/login` takes a username and password and returns an
+`AuthResponse` (`token`, `username`, `userId` — see
+`backend/src/main/java/com/accordion/dto/AuthResponse.java`), not a user object with
+`joinedAt`. Accounts are created through `POST /api/users/register`.
+
 ### [COMPLETED] TICKET-007: Chat Service and WebSocket Controller
 **Status:** [COMPLETED] Completed  
 **Priority:** P0  
@@ -136,6 +142,11 @@ Create REST endpoint to retrieve message history for new users joining the chat.
 - [x] Return messages ordered by timestamp descending
 - [x] Include username, content, and timestamp
 - [x] Test with various limit values
+
+**Note:** The newest `limit` messages are selected by timestamp descending, but
+`ChatService.getRecentMessages` and `getRecentMessagesByChannel`
+(`backend/src/main/java/com/accordion/service/ChatService.java`) reverse that list
+before returning it, so `GET /api/messages` returns messages **oldest first**.
 
 ### [COMPLETED] TICKET-009: LibGDX Project Setup
 **Status:** [COMPLETED] Completed  
